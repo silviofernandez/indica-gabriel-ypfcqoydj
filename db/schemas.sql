@@ -233,8 +233,31 @@ CREATE INDEX IF NOT EXISTS idx_notif_referral ON public.notifications_log (refer
 CREATE INDEX IF NOT EXISTS idx_notif_read ON public.notifications_log (read);
 
 -- ============================================================================
--- POLICIES DE RLS BÁSICAS (Row Level Security)
+-- RLS E AUTENTICAÇÃO (Row Level Security & Políticas de Controle de Acesso)
 -- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Função auxiliar: current_user_role()
+-- Retorna o papel (role) do usuário autenticado no auth.uid() a partir de profiles.
+-- Definida com SECURITY DEFINER e STABLE para evitar recursão infinita e garantir
+-- performance consistente durante a avaliação das políticas de RLS.
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.current_user_role()
+RETURNS text
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+    SELECT role::text FROM public.profiles WHERE user_id = auth.uid() LIMIT 1;
+$$;
+
+COMMENT ON FUNCTION public.current_user_role() IS
+'Retorna o role do usuário autenticado (indicador, master, operator, manager) consultando profiles.';
+
+-- ----------------------------------------------------------------------------
+-- Habilitação obrigatória de RLS em TODAS as 9 tabelas do modelo
+-- ----------------------------------------------------------------------------
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.indicators ENABLE ROW LEVEL SECURITY;
@@ -245,12 +268,343 @@ ALTER TABLE public.bonuses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bonus_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications_log ENABLE ROW LEVEL SECURITY;
 
--- Leitura pública para autenticados e regras base
-CREATE POLICY "Autenticados podem ler teams" ON public.teams FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Autenticados podem ler profiles" ON public.profiles FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Usuário pode atualizar seu próprio profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+-- ============================================================================
+-- 1. POLICIES: TEAMS
+-- Leitura para qualquer autenticado (menus, dashboards e filtros de equipe).
+-- Escrita (INSERT, UPDATE, DELETE) restrita a administradores (master).
+-- ============================================================================
+CREATE POLICY "teams_select_authenticated"
+    ON public.teams FOR SELECT
+    TO authenticated
+    USING (true);
 
-CREATE POLICY "Autenticados podem ler indicators" ON public.indicators FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Usuário pode gerenciar seu indicator" ON public.indicators FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "teams_insert_master"
+    ON public.teams FOR INSERT
+    TO authenticated
+    WITH CHECK (public.current_user_role() = 'master');
 
-CREATE POLICY "Autenticados podem ler bonus_settings" ON public.bonus_settings FOR SELECT TO authenticated USING (true);
+CREATE POLICY "teams_update_master"
+    ON public.teams FOR UPDATE
+    TO authenticated
+    USING (public.current_user_role() = 'master')
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "teams_delete_master"
+    ON public.teams FOR DELETE
+    TO authenticated
+    USING (public.current_user_role() = 'master');
+
+-- ============================================================================
+-- 2. POLICIES: PROFILES
+-- Leitura para autenticados (necessário para exibição de nomes, papéis e menus).
+-- Criação permitida para o próprio usuário ao cadastrar-se ou pelo master.
+-- Atualização: usuário pode atualizar seus próprios dados (nome, phone, etc.),
+-- porém a alteração de role/team_id é reservada para master.
+-- Exclusão: apenas master.
+-- ============================================================================
+CREATE POLICY "profiles_select_authenticated"
+    ON public.profiles FOR SELECT
+    TO authenticated
+    USING (true);
+
+CREATE POLICY "profiles_insert_own_or_master"
+    ON public.profiles FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        auth.uid() = user_id
+        OR public.current_user_role() = 'master'
+    );
+
+CREATE POLICY "profiles_update_own_or_master"
+    ON public.profiles FOR UPDATE
+    TO authenticated
+    USING (
+        auth.uid() = user_id
+        OR public.current_user_role() = 'master'
+    )
+    WITH CHECK (
+        public.current_user_role() = 'master'
+        OR (
+            auth.uid() = user_id
+            AND role = (SELECT p.role FROM public.profiles p WHERE p.user_id = auth.uid())
+            AND team_id IS NOT DISTINCT FROM (SELECT p.team_id FROM public.profiles p WHERE p.user_id = auth.uid())
+        )
+    );
+
+CREATE POLICY "profiles_delete_master"
+    ON public.profiles FOR DELETE
+    TO authenticated
+    USING (public.current_user_role() = 'master');
+
+-- ============================================================================
+-- 3. POLICIES: INDICATORS
+-- Cadastro público (anon INSERT): permite que qualquer visitante crie seu cadastro
+-- Leitura: indicador vê apenas o seu registro; operator, manager e master veem todos.
+-- Atualização/Exclusão: apenas o próprio dono ou master.
+-- ============================================================================
+CREATE POLICY "indicators_insert_anon_and_auth"
+    ON public.indicators FOR INSERT
+    TO anon, authenticated
+    WITH CHECK (true);
+
+CREATE POLICY "indicators_select_by_role"
+    ON public.indicators FOR SELECT
+    TO authenticated
+    USING (
+        auth.uid() = user_id
+        OR public.current_user_role() IN ('operator', 'manager', 'master')
+    );
+
+CREATE POLICY "indicators_update_own_or_master"
+    ON public.indicators FOR UPDATE
+    TO authenticated
+    USING (
+        auth.uid() = user_id
+        OR public.current_user_role() = 'master'
+    )
+    WITH CHECK (
+        auth.uid() = user_id
+        OR public.current_user_role() = 'master'
+    );
+
+CREATE POLICY "indicators_delete_own_or_master"
+    ON public.indicators FOR DELETE
+    TO authenticated
+    USING (
+        auth.uid() = user_id
+        OR public.current_user_role() = 'master'
+    );
+
+-- ============================================================================
+-- 4. POLICIES: TEAM_MEMBERS
+-- Leitura para autenticados (listagens de equipes e membros).
+-- Escrita (INSERT, UPDATE, DELETE) restrita a master.
+-- ============================================================================
+CREATE POLICY "team_members_select_authenticated"
+    ON public.team_members FOR SELECT
+    TO authenticated
+    USING (true);
+
+CREATE POLICY "team_members_insert_master"
+    ON public.team_members FOR INSERT
+    TO authenticated
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "team_members_update_master"
+    ON public.team_members FOR UPDATE
+    TO authenticated
+    USING (public.current_user_role() = 'master')
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "team_members_delete_master"
+    ON public.team_members FOR DELETE
+    TO authenticated
+    USING (public.current_user_role() = 'master');
+
+-- ============================================================================
+-- 5. POLICIES: REFERRALS
+-- Leitura:
+-- - Indicador vê APENAS suas próprias indicações (via indicator_id -> user_id)
+-- - Operator vê TODAS as indicações
+-- - Manager vê as atribuídas a ele (assigned_to) e as de membros da sua equipe
+-- - Master vê TUDO
+-- Escrita:
+-- - INSERT: indicador pode criar referral apontando para o seu indicator_id;
+--           master/operator também podem inserir indicações diretamente.
+-- - UPDATE/DELETE: master vê e edita tudo (operações sensíveis de alteração central).
+-- ============================================================================
+CREATE POLICY "referrals_select_by_role"
+    ON public.referrals FOR SELECT
+    TO authenticated
+    USING (
+        public.current_user_role() = 'master'
+        OR public.current_user_role() = 'operator'
+        OR (
+            public.current_user_role() = 'indicador'
+            AND indicator_id IN (
+                SELECT ind.id FROM public.indicators ind WHERE ind.user_id = auth.uid()
+            )
+        )
+        OR (
+            public.current_user_role() = 'manager'
+            AND (
+                assigned_to = auth.uid()
+                OR assigned_to IN (
+                    SELECT tm.user_id
+                    FROM public.team_members tm
+                    WHERE tm.team_id IN (
+                        SELECT p.team_id FROM public.profiles p WHERE p.user_id = auth.uid()
+                        UNION
+                        SELECT t.id FROM public.teams t WHERE t.leader_id = auth.uid()
+                    )
+                )
+            )
+        )
+    );
+
+CREATE POLICY "referrals_insert_by_role"
+    ON public.referrals FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        public.current_user_role() IN ('master', 'operator')
+        OR (
+            public.current_user_role() = 'indicador'
+            AND indicator_id IN (
+                SELECT ind.id FROM public.indicators ind WHERE ind.user_id = auth.uid()
+            )
+        )
+    );
+
+CREATE POLICY "referrals_update_master"
+    ON public.referrals FOR UPDATE
+    TO authenticated
+    USING (public.current_user_role() = 'master')
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "referrals_delete_master"
+    ON public.referrals FOR DELETE
+    TO authenticated
+    USING (public.current_user_role() = 'master');
+
+-- ============================================================================
+-- 6. POLICIES: REFERRAL_STATUS_HISTORY
+-- Leitura espelha a visibilidade do referral pai (referral_id).
+-- Escrita (INSERT): staff (master e operator) para registro de histórico.
+-- UPDATE / DELETE: apenas master.
+-- ============================================================================
+CREATE POLICY "referral_status_history_select_by_role"
+    ON public.referral_status_history FOR SELECT
+    TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.referrals r
+            WHERE r.id = referral_status_history.referral_id
+        )
+    );
+
+CREATE POLICY "referral_status_history_insert_staff"
+    ON public.referral_status_history FOR INSERT
+    TO authenticated
+    WITH CHECK (public.current_user_role() IN ('master', 'operator'));
+
+CREATE POLICY "referral_status_history_update_master"
+    ON public.referral_status_history FOR UPDATE
+    TO authenticated
+    USING (public.current_user_role() = 'master')
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "referral_status_history_delete_master"
+    ON public.referral_status_history FOR DELETE
+    TO authenticated
+    USING (public.current_user_role() = 'master');
+
+-- ============================================================================
+-- 7. POLICIES: BONUSES
+-- Leitura:
+-- - Indicador vê apenas os bônus associados ao seu indicator_id
+-- - Operator vê todos os bônus
+-- - Manager vê os bônus vinculados às indicações atribuídas ou de membros da sua equipe
+-- - Master vê tudo
+-- Escrita (INSERT, UPDATE, DELETE): restrita a master.
+-- ============================================================================
+CREATE POLICY "bonuses_select_by_role"
+    ON public.bonuses FOR SELECT
+    TO authenticated
+    USING (
+        public.current_user_role() = 'master'
+        OR public.current_user_role() = 'operator'
+        OR (
+            public.current_user_role() = 'indicador'
+            AND indicator_id IN (
+                SELECT ind.id FROM public.indicators ind WHERE ind.user_id = auth.uid()
+            )
+        )
+        OR (
+            public.current_user_role() = 'manager'
+            AND referral_id IN (
+                SELECT r.id FROM public.referrals r
+                WHERE r.assigned_to = auth.uid()
+                   OR r.assigned_to IN (
+                       SELECT tm.user_id
+                       FROM public.team_members tm
+                       WHERE tm.team_id IN (
+                           SELECT p.team_id FROM public.profiles p WHERE p.user_id = auth.uid()
+                           UNION
+                           SELECT t.id FROM public.teams t WHERE t.leader_id = auth.uid()
+                       )
+                   )
+            )
+        )
+    );
+
+CREATE POLICY "bonuses_insert_master"
+    ON public.bonuses FOR INSERT
+    TO authenticated
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "bonuses_update_master"
+    ON public.bonuses FOR UPDATE
+    TO authenticated
+    USING (public.current_user_role() = 'master')
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "bonuses_delete_master"
+    ON public.bonuses FOR DELETE
+    TO authenticated
+    USING (public.current_user_role() = 'master');
+
+-- ============================================================================
+-- 8. POLICIES: BONUS_SETTINGS
+-- Leitura para qualquer autenticado (a tela /admin/configuracoes lê os 4 parâmetros).
+-- Escrita (INSERT, UPDATE, DELETE): apenas master.
+-- ============================================================================
+CREATE POLICY "bonus_settings_select_authenticated"
+    ON public.bonus_settings FOR SELECT
+    TO authenticated
+    USING (true);
+
+CREATE POLICY "bonus_settings_insert_master"
+    ON public.bonus_settings FOR INSERT
+    TO authenticated
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "bonus_settings_update_master"
+    ON public.bonus_settings FOR UPDATE
+    TO authenticated
+    USING (public.current_user_role() = 'master')
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "bonus_settings_delete_master"
+    ON public.bonus_settings FOR DELETE
+    TO authenticated
+    USING (public.current_user_role() = 'master');
+
+-- ============================================================================
+-- 9. POLICIES: NOTIFICATIONS_LOG
+-- Leitura: usuário autenticado vê apenas as suas notificações (user_id = auth.uid());
+--          master vê todas.
+-- Escrita (INSERT, UPDATE, DELETE): restrita a master (ou processos internos/serviço).
+-- ============================================================================
+CREATE POLICY "notifications_log_select_own_or_master"
+    ON public.notifications_log FOR SELECT
+    TO authenticated
+    USING (
+        auth.uid() = user_id
+        OR public.current_user_role() = 'master'
+    );
+
+CREATE POLICY "notifications_log_insert_master"
+    ON public.notifications_log FOR INSERT
+    TO authenticated
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "notifications_log_update_master"
+    ON public.notifications_log FOR UPDATE
+    TO authenticated
+    USING (public.current_user_role() = 'master')
+    WITH CHECK (public.current_user_role() = 'master');
+
+CREATE POLICY "notifications_log_delete_master"
+    ON public.notifications_log FOR DELETE
+    TO authenticated
+    USING (public.current_user_role() = 'master');

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T19:46:06.895Z",
+  "generatedAt": "2026-09-30T19:56:40.321Z",
   "collections": [
     {
       "name": "users",
@@ -50,9 +50,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "create": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "update": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "delete": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'"
       },
       "fields": [
         {
@@ -107,8 +107,8 @@
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "update": "@request.auth.id != '' && (user_id = @request.auth.id || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "delete": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'"
       },
       "fields": [
         {
@@ -175,11 +175,11 @@
       "name": "indicators",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "list": "@request.auth.id != '' && (user_id = @request.auth.id || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && (@collection.profiles.role ?= 'master' || @collection.profiles.role ?= 'operator' || @collection.profiles.role ?= 'manager')))",
+        "view": "@request.auth.id != '' && (user_id = @request.auth.id || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && (@collection.profiles.role ?= 'master' || @collection.profiles.role ?= 'operator' || @collection.profiles.role ?= 'manager')))",
+        "create": "",
+        "update": "@request.auth.id != '' && (user_id = @request.auth.id || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "delete": "@request.auth.id != '' && (user_id = @request.auth.id || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))"
       },
       "fields": [
         {
@@ -258,9 +258,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "create": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "update": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "delete": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'"
       },
       "fields": [
         {
@@ -315,11 +315,11 @@
       "name": "referrals",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "list": "@request.auth.id != '' && (indicator_id.user_id = @request.auth.id || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'operator') || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'manager' && (assigned_to = @request.auth.id || @collection.team_members.user_id ?= assigned_to)) || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "view": "@request.auth.id != '' && (indicator_id.user_id = @request.auth.id || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'operator') || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'manager' && (assigned_to = @request.auth.id || @collection.team_members.user_id ?= assigned_to)) || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "create": "@request.auth.id != '' && (indicator_id.user_id = @request.auth.id || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "update": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "delete": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'"
       },
       "fields": [
         {
@@ -419,11 +419,11 @@
       "name": "referral_status_history",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "list": "@request.auth.id != '' && (referral_id.indicator_id.user_id = @request.auth.id || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'operator') || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'manager' && (referral_id.assigned_to = @request.auth.id || @collection.team_members.user_id ?= referral_id.assigned_to)) || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "view": "@request.auth.id != '' && (referral_id.indicator_id.user_id = @request.auth.id || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'operator') || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'manager' && (referral_id.assigned_to = @request.auth.id || @collection.team_members.user_id ?= referral_id.assigned_to)) || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "create": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && (@collection.profiles.role ?= 'master' || @collection.profiles.role ?= 'operator')",
+        "update": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "delete": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'"
       },
       "fields": [
         {
@@ -482,11 +482,11 @@
       "name": "bonuses",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "list": "@request.auth.id != '' && (indicator_id.user_id = @request.auth.id || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'operator') || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'manager' && (referral_id.assigned_to = @request.auth.id || @collection.team_members.user_id ?= referral_id.assigned_to)) || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "view": "@request.auth.id != '' && (indicator_id.user_id = @request.auth.id || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'operator') || (@collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'manager' && (referral_id.assigned_to = @request.auth.id || @collection.team_members.user_id ?= referral_id.assigned_to)) || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "create": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "update": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "delete": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'"
       },
       "fields": [
         {
@@ -556,9 +556,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "create": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "update": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "delete": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'"
       },
       "fields": [
         {
@@ -600,11 +600,11 @@
       "name": "notifications_log",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
-        "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
-        "delete": "@request.auth.id != ''"
+        "list": "@request.auth.id != '' && (user_id = @request.auth.id || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "view": "@request.auth.id != '' && (user_id = @request.auth.id || (@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'))",
+        "create": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "update": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'",
+        "delete": "@request.auth.id != '' && @collection.profiles.user_id ?= @request.auth.id && @collection.profiles.role ?= 'master'"
       },
       "fields": [
         {
