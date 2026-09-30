@@ -55,33 +55,39 @@ class SupabaseClientWrapper {
 
   /**
    * Testa a conectividade com o Supabase oficial configurado.
-   * Faz um ping no endpoint público de autenticação ou de status.
+   * Faz um ping no endpoint público de autenticação com timeout rigoroso (3s)
+   * para jamais travar a inicialização da aplicação ou o preview.
    */
-  public async testConnection(): Promise<SupabaseConnectionStatus> {
+  public async testConnection(timeoutMs = 3000): Promise<SupabaseConnectionStatus> {
     const cfg = this.getConfig()
     const now = new Date().toISOString()
 
     if (!cfg.isConfigured) {
       return {
         connected: false,
-        message: 'Variáveis VITE_SUPABASE_URL ou VITE_SUPABASE_ANON_KEY não configuradas',
+        message: 'Credenciais remotas do Supabase não configuradas no ambiente',
         timestamp: now,
         usingFallback: true,
       }
     }
 
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
     try {
-      // Faz requisição para a API de Auth/Settings do Supabase
+      // Faz requisição para a API de Auth/Settings do Supabase com timeout
       const res = await fetch(`${cfg.url.replace(/\/$/, '')}/auth/v1/settings`, {
         method: 'GET',
+        signal: controller.signal,
         headers: {
           apikey: cfg.anonKey,
           Authorization: `Bearer ${cfg.anonKey}`,
         },
       })
 
+      clearTimeout(timeoutId)
+
       if (res.ok || res.status === 401 || res.status === 200) {
-        // Se respondeu HTTP 200 ou mesmo 401 com JSON válido da Supabase Auth API, o servidor está alcançável e ativo
         return {
           connected: true,
           message: 'Supabase oficial conectado com sucesso',
@@ -91,15 +97,26 @@ class SupabaseClientWrapper {
 
       return {
         connected: false,
-        message: `Servidor Supabase respondeu com status ${res.status}`,
+        message: `Servidor Supabase respondeu com status HTTP ${res.status}`,
         timestamp: now,
+        usingFallback: true,
       }
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : 'Falha na requisição'
+      clearTimeout(timeoutId)
+      const isAbort =
+        (err instanceof DOMException && err.name === 'AbortError') ||
+        (err instanceof Error && err.name === 'AbortError')
+      const errorMsg = isAbort
+        ? 'Tempo limite de resposta do Supabase esgotado (timeout)'
+        : err instanceof Error
+          ? err.message
+          : 'Falha na requisição'
+
       return {
         connected: false,
-        message: `Não foi possível alcançar o Supabase: ${errorMsg}`,
+        message: `Supabase indisponível: ${errorMsg}`,
         timestamp: now,
+        usingFallback: true,
       }
     }
   }

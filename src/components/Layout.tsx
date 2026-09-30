@@ -212,11 +212,15 @@ export default function Layout() {
 
               {/* Status do Backend */}
               <div className="mt-4 p-3 bg-[#faf7f2] border border-[#e5e0d8] rounded-lg flex items-center gap-2 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span
+                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                    supabaseStatus.connected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                  }`}
+                />
                 <span className="text-gray-700 font-medium truncate">
                   {supabaseStatus.connected
                     ? 'Conexão com Backend Ativa'
-                    : 'Verificando Backend...'}
+                    : supabaseStatus.message || 'Verificando Backend...'}
                 </span>
               </div>
 

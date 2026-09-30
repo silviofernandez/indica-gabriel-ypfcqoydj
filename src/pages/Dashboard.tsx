@@ -87,12 +87,26 @@ export default function Dashboard() {
               </div>
 
               {/* Badge Pulsante Requerido pela Especificação */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+              <div
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${
+                  supabaseStatus.connected
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                    : 'bg-amber-50 border border-amber-200 text-amber-700'
+                }`}
+              >
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                  {supabaseStatus.connected && (
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  )}
+                  <span
+                    className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                      supabaseStatus.connected ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                  />
                 </span>
-                Conexão com Supabase ativa
+                {supabaseStatus.connected
+                  ? 'Conexão com Backend Ativa'
+                  : 'Backend em Modo Fallback Local'}
               </div>
             </div>
           </CardHeader>

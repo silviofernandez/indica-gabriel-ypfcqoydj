@@ -39,34 +39,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     timestamp: new Date().toISOString(),
   })
 
-  // Testa conexão com o Supabase e/ou backend ativo
+  // Testa conexão com o Supabase e/ou backend ativo com timeout rigoroso
   const checkSupabaseConnection = async (): Promise<SupabaseConnectionStatus> => {
     const config = getSupabaseConfig()
     let status: SupabaseConnectionStatus
 
-    if (config.isConfigured) {
-      status = await supabase.testConnection()
-    } else {
-      // Quando as credenciais remotas do Supabase ainda não foram informadas via env,
-      // verifica se o backend Skip Cloud/Pocketbase integrado da aplicação responde perfeitamente.
-      try {
-        const health = await pb.health.check()
-        const isHealthy = health && health.code === 200
-        status = {
-          connected: isHealthy,
-          message: isHealthy
-            ? 'Backend oficial ativo e pronto (Pronto para vincular chaves Supabase adicionais)'
-            : 'Aguardando inicialização do backend',
-          timestamp: new Date().toISOString(),
-          usingFallback: true,
+    try {
+      if (config.isConfigured) {
+        status = await supabase.testConnection(3000)
+      } else {
+        // Quando as credenciais remotas do Supabase ainda não foram informadas via env,
+        // verifica se o backend Skip Cloud integrado da aplicação responde perfeitamente com timeout de 2.5s.
+        const healthPromise = pb.health.check()
+        const timeoutPromise = new Promise<{ code: number }>((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout ao verificar saúde do backend')), 2500),
+        )
+
+        try {
+          const health = (await Promise.race([healthPromise, timeoutPromise])) as {
+            code?: number
+          }
+          const isHealthy = health && health.code === 200
+          status = {
+            connected: Boolean(isHealthy),
+            message: isHealthy
+              ? 'Backend oficial ativo e pronto (Pronto para vincular chaves Supabase adicionais)'
+              : 'Backend em inicialização',
+            timestamp: new Date().toISOString(),
+            usingFallback: true,
+          }
+        } catch {
+          status = {
+            connected: true, // Modo offline / desenvolvimento ativo
+            message: 'Backend local ativo (aguardando credenciais VITE_SUPABASE_URL)',
+            timestamp: new Date().toISOString(),
+            usingFallback: true,
+          }
         }
-      } catch {
-        status = {
-          connected: true, // Modo offline / de desenvolvimento ativo
-          message: 'Backend local ativo (aguardando credenciais VITE_SUPABASE_URL)',
-          timestamp: new Date().toISOString(),
-          usingFallback: true,
-        }
+      }
+    } catch {
+      status = {
+        connected: false,
+        message: 'Verificação de conexão concluída com fallback local',
+        timestamp: new Date().toISOString(),
+        usingFallback: true,
       }
     }
 
@@ -76,9 +92,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Inicializa sessão do usuário
   useEffect(() => {
-    const initAuth = async () => {
+    const initAuth = () => {
       try {
-        // 1. Checa se há sessão PocketBase autenticada
+        // 1. Checa se há sessão PocketBase autenticada (síncrono pelo authStore em memória)
         if (pb.authStore.isValid && pb.authStore.record) {
           const rec = pb.authStore.record
           setUser({
@@ -102,12 +118,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err) {
         console.warn('Erro ao restaurar sessão de autenticação:', err)
       } finally {
+        // Libera a renderização imediatamente para nunca bloquear a página inicial ou rotas
         setIsLoading(false)
+        // Dispara verificação de backend em segundo plano
         void checkSupabaseConnection()
       }
     }
 
-    void initAuth()
+    initAuth()
 
     // Inscreve-se nas mudanças do authStore do PocketBase
     const unsubscribe = pb.authStore.onChange((_token, model) => {
