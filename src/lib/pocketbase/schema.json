@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T21:09:30.280Z",
+  "generatedAt": "2026-09-30T21:15:07.153Z",
   "collections": [
     {
       "name": "users",
@@ -503,6 +503,12 @@
           "type": "number",
           "required": false,
           "system": false
+        },
+        {
+          "name": "sla_breached",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -512,7 +518,8 @@
         "CREATE INDEX `idx_referrals_property_type` ON `referrals` (property_type)",
         "CREATE INDEX `idx_referrals_sla_deadline` ON `referrals` (sla_deadline)",
         "CREATE INDEX `idx_referrals_assigned_team` ON `referrals` (assigned_team_id)",
-        "CREATE INDEX `idx_referrals_assigned_manager` ON `referrals` (assigned_manager_id)"
+        "CREATE INDEX `idx_referrals_assigned_manager` ON `referrals` (assigned_manager_id)",
+        "CREATE INDEX `idx_referrals_sla_breached` ON `referrals` (sla_breached)"
       ]
     },
     {
@@ -571,11 +578,18 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "notified",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_refhist_referral ON referral_status_history (referral_id)",
-        "CREATE INDEX idx_refhist_changedby ON referral_status_history (changed_by)"
+        "CREATE INDEX idx_refhist_changedby ON referral_status_history (changed_by)",
+        "CREATE INDEX `idx_refhist_notified` ON `referral_status_history` (notified)"
       ]
     },
     {
@@ -815,7 +829,8 @@
             "registration_received",
             "approved_credentials",
             "status_changed",
-            "bonus_paid"
+            "bonus_paid",
+            "monthly_payment_reminder"
           ]
         },
         {

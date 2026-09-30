@@ -20,6 +20,7 @@ routerAdd('POST', '/backend/v1/send-notification', (e) => {
     'approved_credentials',
     'status_changed',
     'bonus_paid',
+    'monthly_payment_reminder',
   ]
   if (!allowedEvents.includes(eventType)) {
     return e.json(400, {
@@ -250,6 +251,75 @@ routerAdd('POST', '/backend/v1/send-notification', (e) => {
       '</div>' +
       '<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />' +
       '<p style="font-size:12px;color:#64748b;margin:0;">Equipe Indica Gabriel</p>' +
+      '</div>'
+  } else if (eventType === 'monthly_payment_reminder') {
+    const rawTotalAmount = Number(payload.total_amount || 0)
+    const formattedTotal =
+      rawTotalAmount > 0
+        ? 'R$ ' +
+          rawTotalAmount.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
+        : payload.total_amount_text || 'R$ 0,00'
+    const totalBonuses = Number(payload.total_bonuses || payload.bonuses_count || 0)
+    const totalIndicators = Number(payload.total_indicators || payload.indicators_count || 0)
+    const monthRef = String(payload.month_reference || payload.related_id || '').trim()
+
+    subject = 'Lembrete financeiro: Bonificações a pagar amanhã (Dia 10) | Indica Gabriel'
+    textContent =
+      'Olá, ' +
+      safeName +
+      '!\n\n' +
+      'Este é um lembrete automático do sistema Indica Gabriel sobre os pagamentos de bonificações programados para o dia 10' +
+      (monthRef ? ' (' + monthRef + ')' : '') +
+      '.\n\n' +
+      'Resumo das bonificações pendentes:\n' +
+      '• Valor total pendente: ' +
+      formattedTotal +
+      '\n' +
+      '• Quantidade de bonificações: ' +
+      totalBonuses +
+      '\n' +
+      '• Indicadores envolvidos: ' +
+      totalIndicators +
+      '\n\n' +
+      'Acesse o módulo financeiro para conferir as chaves PIX e realizar os pagamentos:\n' +
+      appUrl +
+      '/admin/financeiro\n\n' +
+      'Equipe Indica Gabriel'
+
+    htmlContent =
+      '<div style="font-family:sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e2e8f0;border-radius:8px;">' +
+      '<h2 style="color:#0f2a43;margin-top:0;">Lembrete de Pagamento de Bonificações 📅</h2>' +
+      '<p>Olá, <strong>' +
+      safeName +
+      '</strong>,</p>' +
+      '<p>Lembramos que amanhã, <strong>dia 10</strong>' +
+      (monthRef ? ' (' + monthRef + ')' : '') +
+      ', é a data prevista para liquidação das bonificações pendentes aos parceiros do Indica Gabriel.</p>' +
+      '<div style="background:#f8fafc;border:1px solid #cbd5e1;padding:16px;border-radius:6px;margin:20px 0;">' +
+      '<p style="margin:0;font-size:13px;color:#64748b;text-transform:uppercase;font-weight:600;">Total pendente a pagar:</p>' +
+      '<p style="margin:4px 0 12px 0;font-size:26px;font-weight:bold;color:#0f2a43;">' +
+      formattedTotal +
+      '</p>' +
+      '<div style="border-top:1px solid #e2e8f0;padding-top:10px;font-size:14px;color:#334155;">' +
+      '<p style="margin:4px 0;">• Bonificações aguardando pagamento: <strong>' +
+      totalBonuses +
+      '</strong></p>' +
+      '<p style="margin:4px 0;">• Indicadores/parceiros a receber: <strong>' +
+      totalIndicators +
+      '</strong></p>' +
+      '</div>' +
+      '</div>' +
+      '<p>Confira a listagem detalhada e as chaves PIX cadastradas no painel administrativo:</p>' +
+      '<div style="margin:20px 0;">' +
+      '<a href="' +
+      appUrl +
+      '/admin/financeiro" style="background:#0f2a43;color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block;">Acessar Financeiro</a>' +
+      '</div>' +
+      '<hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />' +
+      '<p style="font-size:12px;color:#64748b;margin:0;">Equipe Indica Gabriel • Notificação automática do sistema</p>' +
       '</div>'
   } else if (eventType === 'bonus_paid') {
     const rawAmount = Number(payload.amount || payload.bonus_amount || 0)

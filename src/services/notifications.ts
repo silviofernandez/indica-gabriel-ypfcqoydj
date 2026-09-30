@@ -6,6 +6,7 @@ export type NotificationEventType =
   | 'approved_credentials'
   | 'status_changed'
   | 'bonus_paid'
+  | 'monthly_payment_reminder'
 
 export interface SendNotificationPayload {
   channel: NotificationChannel

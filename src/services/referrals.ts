@@ -203,6 +203,7 @@ export interface ReferralRecord {
   notes?: string
   raw_transcription?: string
   sla_deadline?: string
+  sla_breached?: boolean
   created: string
   updated: string
   // Expansões opcionais PocketBase
@@ -240,6 +241,7 @@ export interface ReferralStatusHistoryRecord {
   new_status: string
   changed_by?: string
   notes?: string
+  notified?: boolean
   created: string
   updated: string
   expand?: {
