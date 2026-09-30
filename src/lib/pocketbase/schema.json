@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T20:13:18.269Z",
+  "generatedAt": "2026-09-30T20:32:42.592Z",
   "collections": [
     {
       "name": "users",
@@ -453,13 +453,26 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "raw_transcription",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sla_deadline",
+          "type": "date",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_referrals_indicator ON referrals (indicator_id)",
         "CREATE INDEX idx_referrals_status ON referrals (status)",
         "CREATE INDEX idx_referrals_assigned ON referrals (assigned_to)",
-        "CREATE INDEX `idx_referrals_property_type` ON `referrals` (property_type)"
+        "CREATE INDEX `idx_referrals_property_type` ON `referrals` (property_type)",
+        "CREATE INDEX `idx_referrals_sla_deadline` ON `referrals` (sla_deadline)"
       ]
     },
     {
