@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import GabrielLogo from '@/components/GabrielLogo'
+import WhatsAppShareButton from '@/components/WhatsAppShareButton'
 
 export default function Index() {
   return (
@@ -25,9 +27,10 @@ export default function Index() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* Bloco de Texto (Desliza da esquerda) */}
             <div className="lg:col-span-7 flex flex-col items-start space-y-6 text-left animate-fade-in-up">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#d9995b] text-xs font-semibold uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" />
-                Programa Oficial de Indicações
+              {/* Badge com Logo G Oficial legível */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#d9995b] text-xs font-semibold uppercase tracking-wider">
+                <GabrielLogo variant="symbol" size={20} inverted />
+                <span>Programa Oficial de Indicações</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
@@ -42,11 +45,11 @@ export default function Index() {
                 em tempo real e seja recompensado por cada cliente que fechar negócio.
               </p>
 
-              {/* Botões CTA */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto pt-2">
+              {/* Botões CTA com WhatsApp bem simples e fácil */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full sm:w-auto pt-2">
                 <Button
                   asChild
-                  className="bg-[#d9995b] hover:bg-[#c48443] text-white font-bold text-base px-8 py-6 rounded-xl shadow-lg shadow-[#d9995b]/25 transition-all duration-200 hover:scale-105 active:scale-95"
+                  className="bg-[#d9995b] hover:bg-[#c48443] text-white font-bold text-base px-7 py-6 rounded-xl shadow-lg shadow-[#d9995b]/25 transition-all duration-200 hover:scale-105 active:scale-95"
                 >
                   <Link to="/cadastro" className="flex items-center justify-center gap-2">
                     Quero ser Indicador
@@ -54,10 +57,16 @@ export default function Index() {
                   </Link>
                 </Button>
 
+                {/* BOTÃO PRINCIPAL DE COMPARTILHAR NO WHATSAPP */}
+                <WhatsAppShareButton
+                  label="Compartilhar no WhatsApp"
+                  className="w-full sm:w-auto"
+                />
+
                 <Button
                   asChild
                   variant="outline"
-                  className="border-white/30 text-white hover:bg-white/10 hover:text-white font-semibold text-base px-8 py-6 rounded-xl backdrop-blur-sm transition-all duration-200"
+                  className="border-white/30 text-white hover:bg-white/10 hover:text-white font-semibold text-base px-5 py-6 rounded-xl backdrop-blur-sm transition-all duration-200"
                 >
                   <a href="#como-funciona" className="flex items-center justify-center">
                     Saiba Mais
@@ -89,12 +98,10 @@ export default function Index() {
                   {/* Cabeçalho do Card */}
                   <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-lg bg-[#1a5d8f]/10 text-[#1a5d8f] flex items-center justify-center font-bold text-sm">
-                        IG
-                      </div>
+                      <GabrielLogo variant="symbol" size={36} />
                       <div>
                         <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                          Exemplo de Indicação
+                          Imobiliária Gabriel
                         </h4>
                         <p className="text-sm font-bold text-[#0f2a43]">ID #IND-2025-042</p>
                       </div>
@@ -250,16 +257,22 @@ export default function Index() {
             Junte-se aos parceiros da Imobiliária Gabriel e transforme seu círculo de contatos em
             renda extra recorrente.
           </p>
-          <div className="pt-4 flex justify-center">
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               asChild
-              className="bg-white text-[#1a5d8f] hover:bg-gray-100 font-bold text-base px-8 py-6 rounded-xl shadow-2xl transition-all duration-200 hover:scale-105 active:scale-95"
+              className="w-full sm:w-auto bg-white text-[#0f2a43] hover:bg-gray-100 font-bold text-base px-8 py-6 rounded-xl shadow-2xl transition-all duration-200 hover:scale-105 active:scale-95"
             >
-              <Link to="/cadastro" className="flex items-center gap-2">
+              <Link to="/cadastro" className="flex items-center justify-center gap-2">
                 Cadastrar como Indicador Parceiro
-                <ArrowRight className="w-5 h-5 text-[#1a5d8f]" />
+                <ArrowRight className="w-5 h-5 text-[#14522a]" />
               </Link>
             </Button>
+
+            <WhatsAppShareButton
+              variant="outline"
+              label="Convidar um Amigo no WhatsApp"
+              className="w-full sm:w-auto bg-white/10 border-white/40 text-white hover:bg-white/20"
+            />
           </div>
         </div>
       </section>

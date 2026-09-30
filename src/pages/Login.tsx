@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { Home, AlertCircle, Loader2, Lock, Mail } from 'lucide-react'
+import { AlertCircle, Loader2, Lock, Mail } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import GabrielLogo from '@/components/GabrielLogo'
 
 export default function Login() {
   const { user, login } = useAuth()
@@ -77,28 +78,34 @@ export default function Login() {
   return (
     <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-gradient-to-br from-[#0f2a43] via-[#15466d] to-[#1a5d8f] px-4 py-12">
       <div className="w-full max-w-md">
-        {/* Cabeçalho da Autenticação */}
+        {/* Cabeçalho da Autenticação com Logo Clássico Gabriel */}
         <div className="text-center mb-8">
           <Link
             to="/"
-            className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-md text-white border border-white/20 mb-4 hover:bg-white/15 transition-colors"
+            className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md text-white border border-white/20 mb-4 hover:bg-white/15 transition-colors"
+            title="Voltar para a página inicial"
           >
-            <div className="w-7 h-7 rounded-lg bg-[#1a5d8f] flex items-center justify-center">
-              <Home className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold tracking-tight">Indica Gabriel</span>
+            <GabrielLogo variant="symbol" size={28} inverted />
+            <span className="font-bold tracking-tight text-white">Indica Gabriel</span>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             Acessar Plataforma
           </h1>
-          <p className="text-sm text-gray-300 mt-1.5">
+          <p className="text-sm text-gray-200 mt-1.5">
             Entre com suas credenciais para gerenciar suas indicações
           </p>
         </div>
 
         {/* Card de Login */}
         <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/20">
-          {/* Alerta de erro amigável sem jargão técnico */}
+          {/* Topo do Card com Logo Clássico Gabriel */}
+          <div className="flex items-center justify-between pb-4 border-b border-[#e5e0d8] mb-5">
+            <GabrielLogo variant="responsive" size={32} />
+            <span className="text-xs font-semibold text-[#14522a] bg-[#14522a]/10 px-2.5 py-1 rounded-full">
+              Portal Parceiro
+            </span>
+          </div>
+          {/* Alerta de erro amigável sem jargão técnico */}{' '}
           {errorMessage && (
             <Alert className="mb-6 bg-red-50 border-red-200 text-red-800 rounded-xl p-4 flex items-start justify-between gap-3">
               <div className="flex items-start gap-2.5">
@@ -124,7 +131,6 @@ export default function Login() {
               </Button>
             </Alert>
           )}
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="login-email" className="text-sm font-semibold text-[#1f2933]">

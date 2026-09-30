@@ -19,6 +19,9 @@ import {
   Wallet,
   FileText,
 } from 'lucide-react'
+import GabrielLogo, { GabrielOfficialLogoImg } from '@/components/GabrielLogo'
+import InstallPwaPrompt from '@/components/InstallPwaPrompt'
+import WhatsAppShareButton from '@/components/WhatsAppShareButton'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -169,21 +172,15 @@ export default function Layout() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
-            {/* Logo Marca */}
+            {/* Logo Marca com o G Oficial da Imobiliária Gabriel */}
             <Link
               to={user ? (isStaff ? '/admin' : '/indicador') : '/'}
-              className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#1a5d8f] rounded-lg p-1"
+              className="flex items-center group focus:outline-none focus:ring-2 focus:ring-[#14522a] rounded-xl p-1 transition-transform hover:scale-[1.02]"
+              title="Indica Gabriel — Imobiliária Gabriel"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#1a5d8f] flex items-center justify-center text-white shadow-md shadow-[#1a5d8f]/20 group-hover:bg-[#144a72] transition-colors">
-                <Home className="w-5 h-5 transition-transform group-hover:scale-110 duration-200" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold tracking-tight text-[#0f2a43] leading-none">
-                  Indica Gabriel
-                </span>
-                <span className="text-xs text-[#d9995b] font-medium tracking-wide mt-1">
-                  Imobiliária Gabriel
-                </span>
+              <div className="flex items-center gap-2.5">
+                {/* G Verde Oficial: no mobile apenas o G, no desktop G + Gabriel */}
+                <GabrielLogo variant="responsive" size={40} />
               </div>
             </Link>
 
@@ -549,25 +546,14 @@ export default function Layout() {
             }`}
           >
             <div className="overflow-y-auto">
-              {/* Header do Drawer */}
+              {/* Header do Drawer com Logo G da Gabriel */}
               <div className="flex items-center justify-between pb-5 border-b border-[#e5e0d8]">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-[#1a5d8f] flex items-center justify-center text-white shadow-sm">
-                    <Home className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-base text-[#0f2a43] block leading-tight">
-                      Indica Gabriel
-                    </span>
-                    <span className="text-[11px] text-[#d9995b] font-medium">
-                      Imobiliária Gabriel
-                    </span>
-                  </div>
-                </div>
+                <GabrielLogo variant="full" size={38} showTagline={false} />
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                  aria-label="Fechar menu"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -808,9 +794,11 @@ export default function Layout() {
                 {/* Itens do Indicador */}
                 {isIndicador && (
                   <div className="space-y-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-3 block mb-2">
-                      Menu do Indicador
-                    </span>
+                    <div className="flex items-center justify-between px-3 pb-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                        Menu do Indicador
+                      </span>
+                    </div>
                     {indicadorNavItems.map((item) => {
                       const Icon = item.icon
                       const isActive = item.exact
@@ -879,15 +867,20 @@ export default function Layout() {
                   </div>
                 )}
 
-                {/* Banner de Suporte Imobiliária Gabriel */}
-                <div className="p-3.5 rounded-xl bg-[#faf7f2] border border-[#e5e0d8] space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#0f2a43]">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Imobiliária Gabriel</span>
+                {/* Banner de Suporte Imobiliária Gabriel com Logo G */}
+                <div className="p-3.5 rounded-xl bg-[#faf7f2] border border-[#e5e0d8] space-y-2">
+                  <div className="flex items-center gap-2">
+                    <GabrielLogo variant="symbol" size={24} />
+                    <span className="text-xs font-bold text-[#0f2a43]">Imobiliária Gabriel</span>
                   </div>
                   <p className="text-[11px] text-gray-500 leading-relaxed">
                     Dúvidas sobre bonificação ou repasse? Fale com seu gerente de equipe.
                   </p>
+                  <WhatsAppShareButton
+                    variant="compact"
+                    label="Convidar amigo"
+                    className="w-full justify-center"
+                  />
                 </div>
               </div>
             </aside>
@@ -905,33 +898,35 @@ export default function Layout() {
         )}
       </div>
 
-      {/* RODAPÉ OFICIAL DA IMOBILIÁRIA GABRIEL */}
-      <footer className="bg-[#0f2a43] text-white pt-16 pb-12 border-t border-[#1a5d8f]/30 mt-auto">
+      {/* RODAPÉ OFICIAL DA IMOBILIÁRIA GABRIEL COM COMPOSIÇÃO COMPLETA CLÁSSICA */}
+      <footer className="bg-[#0b1d2e] text-white pt-16 pb-12 border-t border-[#14522a]/40 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pb-12 border-b border-white/10">
-            {/* Coluna 1: Marca */}
+            {/* Coluna 1: Marca com Logo Gabriel Clássico */}
             <div className="flex flex-col space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#1a5d8f] flex items-center justify-center text-white shadow">
-                  <Home className="w-5 h-5" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xl font-bold tracking-tight text-white">
-                    Indica Gabriel
-                  </span>
-                  <span className="text-xs text-[#d9995b] font-medium">Imobiliária Gabriel</span>
-                </div>
-              </div>
+              {/* Logo Completo Clássico G + Gabriel */}
+              <GabrielLogo variant="full" size={44} inverted showTagline />
+
               <p className="text-sm text-gray-300 leading-relaxed max-w-sm">
-                Conectando você às melhores oportunidades do mercado imobiliário. Indique clientes,
-                acompanhe negócios e conquiste recompensas com total transparência e segurança.
+                Conectando você às melhores oportunidades do mercado imobiliário em Jaú,
+                Pederneiras, Lençóis Paulista e região. Indique clientes, acompanhe negócios e
+                conquiste recompensas com total transparência.
               </p>
+
+              {/* Botão de Compartilhar no Rodapé */}
+              <div className="pt-1">
+                <WhatsAppShareButton
+                  variant="compact"
+                  label="Compartilhar no WhatsApp"
+                  className="bg-white/10 text-emerald-300 border-white/20 hover:bg-white/20"
+                />
+              </div>
+
               <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Backend Oficial Conectado & Operante</span>
+                <span>Imobiliária Gabriel • CRECI 17.051</span>
               </div>
             </div>
-
             {/* Coluna 2: Links Rápidos */}
             <div className="flex flex-col space-y-3">
               <h3 className="text-base font-semibold text-white tracking-wide">Navegação Rápida</h3>
@@ -990,50 +985,53 @@ export default function Layout() {
                 )}
               </ul>
             </div>
-
-            {/* Coluna 3: Redes Sociais e Contato */}
+            {/* Coluna 3: Redes Sociais e Contato + Logo Oficial */}
             <div className="flex flex-col space-y-3">
               <h3 className="text-base font-semibold text-white tracking-wide">
                 Imobiliária Gabriel
               </h3>
               <p className="text-sm text-gray-300 leading-relaxed">
-                Atendimento consultivo, confiança e tradição na compra, venda e locação de imóveis.
+                Atendimento consultivo, confiança e tradição na compra, venda e locação de imóveis
+                há mais de 40 anos.
               </p>
-              <div className="flex items-center gap-4 pt-2">
+
+              {/* Logo oficial da Gabriel com fundo branco sutil clássico */}
+              <div className="pt-2">
+                <GabrielOfficialLogoImg
+                  inverted
+                  maxHeight={56}
+                  className="shadow-sm border border-white/20"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
                 <a
-                  href="#instagram"
-                  aria-label="Instagram"
-                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#d9995b] flex items-center justify-center transition-colors text-white"
+                  href="https://www.imobiliariagabriel.com.br"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-emerald-400 hover:underline font-semibold"
                 >
-                  <span className="text-xs font-bold">IG</span>
-                </a>
-                <a
-                  href="#facebook"
-                  aria-label="Facebook"
-                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#d9995b] flex items-center justify-center transition-colors text-white"
-                >
-                  <span className="text-xs font-bold">FB</span>
-                </a>
-                <a
-                  href="#whatsapp"
-                  aria-label="WhatsApp"
-                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#d9995b] flex items-center justify-center transition-colors text-white"
-                >
-                  <span className="text-xs font-bold">WA</span>
+                  www.imobiliariagabriel.com.br
                 </a>
               </div>
-            </div>
+            </div>{' '}
           </div>
 
           {/* Linha Inferior */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 gap-4">
-            <p>© 2025 Indica Gabriel — Imobiliária Gabriel. Todos os direitos reservados.</p>
+            <p>
+              © 2025 Indica Gabriel — Imobiliária Gabriel • CRECI 17.051. Todos os direitos
+              reservados.
+            </p>
             <p className="flex items-center gap-1">
-              Plataforma desenvolvida para alta performance e segurança
+              Plataforma PWA Oficial • Instale na tela de início
             </p>
           </div>
         </div>
       </footer>
+
+      {/* PROMPT DISCRETO DE INSTALAÇÃO PWA */}
+      <InstallPwaPrompt />
     </div>
   )
 }

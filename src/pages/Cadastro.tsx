@@ -12,9 +12,9 @@ import {
   ArrowRight,
   ShieldCheck,
   Building2,
-  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import GabrielLogo from '@/components/GabrielLogo'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -152,18 +152,23 @@ export default function Cadastro() {
   return (
     <div className="min-h-[calc(100vh-80px)] bg-gradient-to-br from-[#0f2a43] via-[#15466d] to-[#1a5d8f] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        {/* Cabeçalho */}
+        {/* Cabeçalho com Logo Gabriel */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-white/90 text-xs font-semibold mb-3 border border-white/20">
-            <Sparkles className="w-3.5 h-3.5 text-[#d9995b]" />
-            <span>Programa Oficial de Parceiros</span>
+          <div className="flex justify-center mb-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/15 transition-all"
+            >
+              <GabrielLogo variant="symbol" size={26} inverted />
+              <span className="font-bold text-white text-sm">Imobiliária Gabriel</span>
+            </Link>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
             Cadastro de Indicador Parceiro
           </h1>
           <p className="mt-2 text-sm sm:text-base text-gray-200 max-w-xl mx-auto">
-            Indique clientes compradores, vendedores ou locatários para a Imobiliária Gabriel e
-            receba bonificações exclusivas por cada negócio concluído.
+            Indique clientes compradores ou locatários para a Imobiliária Gabriel e receba
+            bonificações exclusivas por cada negócio concluído.
           </p>
         </div>
 
@@ -237,6 +242,14 @@ export default function Cadastro() {
                   </Button>
                 </Alert>
               )}
+
+              {/* Topo do Formulário com Marcação Clássica Gabriel */}
+              <div className="flex items-center justify-between pb-4 border-b border-[#e5e0d8] mb-2">
+                <GabrielLogo variant="responsive" size={32} />
+                <span className="text-xs font-semibold text-[#14522a] bg-[#14522a]/10 px-2.5 py-1 rounded-full">
+                  Ficha de Adesão
+                </span>
+              </div>
 
               {/* Seção 1: Dados Pessoais */}
               <div>
