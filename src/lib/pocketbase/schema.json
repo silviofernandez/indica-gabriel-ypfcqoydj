@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T21:22:21.792Z",
+  "generatedAt": "2026-09-30T21:35:54.523Z",
   "collections": [
     {
       "name": "users",
@@ -880,6 +880,72 @@
         "CREATE INDEX `idx_notif_event_type` ON `notifications_log` (event_type)",
         "CREATE INDEX `idx_notif_status` ON `notifications_log` (status)",
         "CREATE INDEX `idx_notif_related` ON `notifications_log` (related_id)"
+      ]
+    },
+    {
+      "name": "reports",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (owner = @request.auth.id || @request.auth.email = 'gabsilvio@gmail.com')",
+        "view": "@request.auth.id != '' && (owner = @request.auth.id || @request.auth.email = 'gabsilvio@gmail.com')",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (owner = @request.auth.id || @request.auth.email = 'gabsilvio@gmail.com')",
+        "delete": "@request.auth.id != '' && (owner = @request.auth.id || @request.auth.email = 'gabsilvio@gmail.com')"
+      },
+      "fields": [
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "kind",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["indicator", "financial"]
+        },
+        {
+          "name": "format",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pdf", "excel"]
+        },
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_reports_owner ON reports (owner)",
+        "CREATE INDEX idx_reports_kind ON reports (kind)",
+        "CREATE INDEX idx_reports_format ON reports (format)",
+        "CREATE INDEX idx_reports_created ON reports (created DESC)"
       ]
     }
   ]

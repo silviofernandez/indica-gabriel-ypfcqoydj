@@ -21,6 +21,7 @@ import NotFound from './pages/NotFound'
 // Páginas do Indicador
 import IndicadorDashboard from './pages/indicador/IndicadorDashboard'
 import NovaIndicacao from './pages/indicador/NovaIndicacao'
+import IndicadorRelatorio from './pages/indicador/IndicadorRelatorio'
 
 // Páginas do Painel Administrativo
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -86,6 +87,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['indicador', 'master']}>
                   <NovaIndicacao />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/indicador/relatorio"
+              element={
+                <ProtectedRoute allowedRoles={['indicador', 'master']}>
+                  <IndicadorRelatorio />
                 </ProtectedRoute>
               }
             />

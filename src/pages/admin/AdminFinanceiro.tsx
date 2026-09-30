@@ -13,6 +13,9 @@ import {
   Calendar,
   Sparkles,
   User,
+  FileText,
+  FileSpreadsheet,
+  Download,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -29,8 +32,17 @@ import {
 import { listAllBonuses, registerBonusPayment, type BonusRecord } from '@/services/referrals'
 import { formatCurrency, formatDateTime } from '@/pages/indicador/IndicadorDashboard'
 import { formatPhone } from '@/services/indicators'
+import { generateReport, downloadReportUrl, type ReportFormat } from '@/services/reports'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function AdminFinanceiro() {
+  const { user } = useAuth()
+  const isMaster = user?.role === 'master'
+
+  // Estados de geração de relatório financeiro do dia 10
+  const [isGeneratingReport, setIsGeneratingReport] = useState<ReportFormat | null>(null)
+  const [reportError, setReportError] = useState<string | null>(null)
+  const [reportSuccess, setReportSuccess] = useState<string | null>(null)
   const [bonuses, setBonuses] = useState<BonusRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -226,6 +238,35 @@ export default function AdminFinanceiro() {
     setTimeout(() => setCopiedKey(false), 2000)
   }
 
+  // Geração de Relatório Financeiro do Dia 10 (PDF ou Excel)
+  const handleGenerateFinancialReport = async (format: ReportFormat) => {
+    if (!isMaster) return
+    setIsGeneratingReport(format)
+    setReportError(null)
+    setReportSuccess(null)
+
+    try {
+      const res = await generateReport({
+        kind: 'financial',
+        format,
+      })
+
+      if (!res.success || !res.report_url) {
+        setReportError(res.error || 'Não foi possível gerar o relatório financeiro.')
+        return
+      }
+
+      setReportSuccess(`Relatório ${format === 'pdf' ? 'PDF' : 'Excel'} gerado com sucesso!`)
+      downloadReportUrl(res.report_url, res.file_name)
+      setTimeout(() => setReportSuccess(null), 5000)
+    } catch (err) {
+      console.error('Erro ao gerar relatório financeiro:', err)
+      setReportError('Não foi possível gerar o relatório financeiro. Tente novamente.')
+    } finally {
+      setIsGeneratingReport(null)
+    }
+  }
+
   // Rótulos de tipo de bônus
   const getBonusTypeBadge = (b: BonusRecord) => {
     if (b.is_vitacon || b.bonus_type === 'vitacon_percent') {
@@ -296,6 +337,75 @@ export default function AdminFinanceiro() {
           Atualizar Valores
         </Button>
       </div>
+
+      {/* 1.1 BANNER DE DESTAQUE: RELATÓRIO DO PAGAMENTO DO DIA 10 (EXCLUSIVO MASTER) */}
+      {isMaster ? (
+        <Card className="border-[#1a5d8f]/30 bg-gradient-to-r from-[#0f2a43] via-[#15466d] to-[#1a5d8f] text-white shadow-md overflow-hidden relative">
+          <div className="absolute right-0 top-0 bottom-0 w-1/4 bg-radial from-white/10 to-transparent pointer-events-none" />
+          <CardContent className="p-5 sm:p-6 relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div className="space-y-1.5 max-w-2xl">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-white text-[11px] font-semibold border border-white/15">
+                <Calendar className="w-3.5 h-3.5 text-[#d9995b]" />
+                <span>Fechamento Mensal • Pagamento Dia 10</span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight">
+                Relatório de Pagamento do Dia 10 (Lote PIX)
+              </h2>
+              <p className="text-xs text-gray-200 leading-relaxed">
+                Gere a relação completa de indicadores parceiros com bonificações pendentes, CPF,
+                chave PIX e valor total consolidado para facilitar os pagamentos bancários.
+              </p>
+              {reportError && (
+                <p className="text-xs text-red-200 bg-red-900/40 p-2 rounded-lg border border-red-400/40 font-medium">
+                  {reportError}
+                </p>
+              )}
+              {reportSuccess && (
+                <p className="text-xs text-emerald-200 bg-emerald-900/40 p-2 rounded-lg border border-emerald-400/40 font-medium">
+                  {reportSuccess}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+              <Button
+                type="button"
+                onClick={() => void handleGenerateFinancialReport('pdf')}
+                disabled={isGeneratingReport !== null}
+                className="bg-white/10 hover:bg-white/20 text-white font-bold h-10 px-4 rounded-xl border border-white/20 text-xs shadow-xs transition-all flex items-center justify-center gap-2"
+              >
+                {isGeneratingReport === 'pdf' ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4 text-red-300" />
+                )}
+                <span>{isGeneratingReport === 'pdf' ? 'Gerando...' : 'Baixar PDF'}</span>
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => void handleGenerateFinancialReport('excel')}
+                disabled={isGeneratingReport !== null}
+                className="bg-[#d9995b] hover:bg-[#c48548] text-white font-bold h-10 px-4 rounded-xl shadow-xs text-xs transition-all flex items-center justify-center gap-2"
+              >
+                {isGeneratingReport === 'excel' ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="w-4 h-4" />
+                )}
+                <span>{isGeneratingReport === 'excel' ? 'Gerando...' : 'Baixar Excel (XLS)'}</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="p-3 bg-[#faf7f2] border border-[#e5e0d8] rounded-xl text-xs text-gray-500 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-gray-400 shrink-0" />
+          <span>
+            A geração de relatórios de pagamento do lote do dia 10 é restrita ao perfil Master.
+          </span>
+        </div>
+      )}
 
       {/* 2. CARDS DE INDICADORES / TOTAIS GLOBAIS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

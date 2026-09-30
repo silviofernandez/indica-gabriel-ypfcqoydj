@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Filter,
   Wallet,
+  FileText,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -83,6 +84,12 @@ export default function Layout() {
       title: 'Nova Indicação',
       to: '/indicador/nova-indicacao',
       icon: PlusCircle,
+      exact: false,
+    },
+    {
+      title: 'Meu Relatório',
+      to: '/indicador/relatorio',
+      icon: FileText,
       exact: false,
     },
   ]
@@ -237,6 +244,17 @@ export default function Layout() {
                         <PlusCircle className="w-3.5 h-3.5" />
                         Nova Indicação
                       </Link>
+                      <Link
+                        to="/indicador/relatorio"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${
+                          location.pathname === '/indicador/relatorio'
+                            ? 'bg-[#1a5d8f] text-white shadow-sm'
+                            : 'text-gray-700 hover:text-[#1a5d8f]'
+                        }`}
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        Relatório
+                      </Link>
                     </>
                   )}
 
@@ -389,6 +407,13 @@ export default function Layout() {
                           >
                             <PlusCircle className="mr-2 h-4 w-4 text-[#1a5d8f]" />
                             Nova Indicação
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/indicador/relatorio')}
+                            className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                          >
+                            <FileText className="mr-2 h-4 w-4 text-[#1a5d8f]" />
+                            Meu Relatório
                           </DropdownMenuItem>
                         </>
                       )}

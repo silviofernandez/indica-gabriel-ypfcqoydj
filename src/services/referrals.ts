@@ -1,3 +1,4 @@
+import type { RecordModel } from 'pocketbase'
 import pb from '@/lib/pocketbase/client'
 
 export type ReferralPropertyType = 'buyer' | 'rental' | 'sale' | 'vitacon'
@@ -184,7 +185,7 @@ export type ReferralStatus =
   | 'expired'
   | string
 
-export interface ReferralRecord {
+export interface ReferralRecord extends RecordModel {
   id: string
   indicator_id: string
   client_name: string

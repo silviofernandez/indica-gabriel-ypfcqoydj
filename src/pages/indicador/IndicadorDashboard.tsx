@@ -21,6 +21,7 @@ import {
   Calendar,
   XCircle,
   Info,
+  FileText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -359,6 +360,17 @@ export default function IndicadorDashboard() {
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span className="sm:inline ml-2 text-xs">Atualizar</span>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+            className="border-white/30 text-white hover:bg-white/10 bg-white/5 h-11 px-4 rounded-xl font-semibold transition-all"
+          >
+            <Link to="/indicador/relatorio" className="flex items-center justify-center gap-2">
+              <FileText className="w-4 h-4 text-[#d9995b]" />
+              <span>Ver Relatório</span>
+            </Link>
           </Button>
 
           <Button
