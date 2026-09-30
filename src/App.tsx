@@ -24,6 +24,8 @@ import NovaIndicacao from './pages/indicador/NovaIndicacao'
 
 // Páginas do Painel Administrativo
 import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminIndicacoes from './pages/admin/AdminIndicacoes'
+import AdminIndicacaoDetalhe from './pages/admin/AdminIndicacaoDetalhe'
 import AdminIndicadores from './pages/admin/AdminIndicadores'
 import AdminEquipas from './pages/admin/AdminEquipas'
 import AdminConfiguracoes from './pages/admin/AdminConfiguracoes'
@@ -92,6 +94,22 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['master', 'operator', 'manager']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/indicacoes"
+              element={
+                <ProtectedRoute allowedRoles={['master', 'operator', 'manager']}>
+                  <AdminIndicacoes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/indicacao/:id"
+              element={
+                <ProtectedRoute allowedRoles={['master', 'operator', 'manager']}>
+                  <AdminIndicacaoDetalhe />
                 </ProtectedRoute>
               }
             />

@@ -15,6 +15,7 @@ import {
   Settings,
   Sparkles,
   ChevronRight,
+  Filter,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -88,10 +89,17 @@ export default function Layout() {
   // Links do menu interno do Admin (master, operator, manager)
   const adminNavItems = [
     {
-      title: 'Painel Admin',
+      title: 'Painel do Dia',
       to: '/admin',
       icon: LayoutDashboard,
       exact: true,
+      visible: isStaff,
+    },
+    {
+      title: 'Indicações',
+      to: '/admin/indicacoes',
+      icon: Filter,
+      exact: false,
       visible: isStaff,
     },
     {
@@ -227,7 +235,17 @@ export default function Layout() {
                             : 'text-gray-700 hover:text-[#1a5d8f]'
                         }`}
                       >
-                        Painel Admin
+                        Painel do Dia
+                      </Link>
+                      <Link
+                        to="/admin/indicacoes"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                          location.pathname.startsWith('/admin/indicaco')
+                            ? 'bg-[#1a5d8f] text-white shadow-sm'
+                            : 'text-gray-700 hover:text-[#1a5d8f]'
+                        }`}
+                      >
+                        Indicações
                       </Link>
                       {(isMaster || user?.role === 'operator') && (
                         <Link
@@ -345,7 +363,14 @@ export default function Layout() {
                             className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
                           >
                             <LayoutDashboard className="mr-2 h-4 w-4 text-[#1a5d8f]" />
-                            Painel Admin
+                            Painel do Dia
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/admin/indicacoes')}
+                            className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                          >
+                            <Filter className="mr-2 h-4 w-4 text-[#1a5d8f]" />
+                            Todas as Indicações
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => navigate('/admin/indicadores')}

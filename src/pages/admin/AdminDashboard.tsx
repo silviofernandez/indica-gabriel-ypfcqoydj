@@ -1,117 +1,687 @@
-import React from 'react'
-import { ShieldCheck, BarChart3, Users, Building, ArrowUpRight } from 'lucide-react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  Clock,
+  AlertTriangle,
+  Send,
+  Building,
+  Users,
+  ArrowRight,
+  RefreshCw,
+  Phone,
+  Calendar,
+  CheckCircle2,
+  ChevronRight,
+  Filter,
+  ShieldCheck,
+  Tag,
+  Building2,
+  Sparkles,
+} from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useAuth } from '@/contexts/AuthContext'
+import {
+  listAllReferrals,
+  listTeams,
+  listTeamManagers,
+  assignReferral,
+  type ReferralRecord,
+  type TeamRecord,
+  type TeamManagerUser,
+} from '@/services/referrals'
+import { formatPhone } from '@/services/indicators'
+import {
+  getStatusConfig,
+  getPropertyTypeLabel,
+  formatDateTime,
+} from '@/pages/indicador/IndicadorDashboard'
 
 export default function AdminDashboard() {
   const { user } = useAuth()
+  const navigate = useNavigate()
+
+  const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [referrals, setReferrals] = useState<ReferralRecord[]>([])
+  const [teams, setTeams] = useState<TeamRecord[]>([])
+  const [managers, setManagers] = useState<TeamManagerUser[]>([])
+
+  // Modal de encaminhamento rápido
+  const [quickAssignOpen, setQuickAssignOpen] = useState(false)
+  const [selectedReferral, setSelectedReferral] = useState<ReferralRecord | null>(null)
+  const [targetTeamId, setTargetTeamId] = useState<string>('')
+  const [targetManagerId, setTargetManagerId] = useState<string>('')
+  const [isSubmittingAssign, setIsSubmittingAssign] = useState(false)
+  const [assignError, setAssignError] = useState<string | null>(null)
+  const [assignSuccess, setAssignSuccess] = useState<string | null>(null)
+
+  // Carrega todas as indicações e metadados de equipes e gestores
+  const loadData = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true)
+    } else {
+      setIsLoading(true)
+    }
+
+    try {
+      const [refRes, teamsRes, managersRes] = await Promise.all([
+        listAllReferrals({ perPage: 500 }),
+        listTeams(),
+        listTeamManagers(),
+      ])
+
+      setReferrals(refRes.items)
+      setTeams(teamsRes)
+      setManagers(managersRes)
+    } catch (err) {
+      console.warn('Erro ao carregar dados do painel admin:', err)
+    } finally {
+      setIsLoading(false)
+      setIsRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadData()
+  }, [loadData])
+
+  // Separação em dois grupos operacionais cruciais do dia:
+  // 1. A ENCAMINHAR: indicações no status inicial 'sent' ou 'in_analysis' que ainda NÃO têm assigned_team_id nem assigned_manager_id
+  // 2. ATRASADAS: indicações onde sla_deadline já passou (now > sla_deadline) e ainda estão pendentes/em atendimento
+  const { toAssignList, delayedList, completedCount, totalCount } = useMemo(() => {
+    const now = new Date().getTime()
+    const toAssign: ReferralRecord[] = []
+    const delayed: ReferralRecord[] = []
+    let completed = 0
+
+    for (const r of referrals) {
+      const s = (r.status || '').toLowerCase()
+      const isCompleted =
+        s === 'closed_won' ||
+        s === 'closed' ||
+        s === 'paid' ||
+        s === 'closed_lost' ||
+        s === 'cancelled' ||
+        s === 'expired'
+
+      if (isCompleted) {
+        completed++
+      }
+
+      // Grupo 1: A Encaminhar (sem equipe E sem gestor atribuído)
+      const hasAssignment = Boolean(r.assigned_team_id || r.assigned_manager_id)
+      const isPendingStatus = s === 'sent' || s === 'in_analysis'
+
+      if (isPendingStatus && !hasAssignment) {
+        toAssign.push(r)
+      }
+
+      // Grupo 2: Atrasadas
+      // Se tiver sla_deadline, sla_deadline < now, e ainda não foi concluída
+      if (r.sla_deadline && !isCompleted) {
+        const deadlineTime = new Date(r.sla_deadline).getTime()
+        if (!isNaN(deadlineTime) && deadlineTime < now) {
+          delayed.push(r)
+        }
+      }
+    }
+
+    return {
+      toAssignList: toAssign,
+      delayedList: delayed,
+      completedCount: completed,
+      totalCount: referrals.length,
+    }
+  }, [referrals])
+
+  const handleOpenQuickAssign = (ref: ReferralRecord, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedReferral(ref)
+    setTargetTeamId(ref.assigned_team_id || '')
+    setTargetManagerId(ref.assigned_manager_id || '')
+    setAssignError(null)
+    setAssignSuccess(null)
+    setQuickAssignOpen(true)
+  }
+
+  const handleConfirmAssign = async () => {
+    if (!selectedReferral) return
+    if (!targetTeamId && !targetManagerId) {
+      setAssignError('Selecione ao menos a equipe ou o gestor responsável.')
+      return
+    }
+
+    setIsSubmittingAssign(true)
+    setAssignError(null)
+
+    const res = await assignReferral({
+      referral_id: selectedReferral.id,
+      assigned_team_id: targetTeamId || undefined,
+      assigned_manager_id: targetManagerId || undefined,
+    })
+
+    setIsSubmittingAssign(false)
+
+    if (res.success) {
+      setAssignSuccess('Indicação encaminhada com sucesso!')
+      setTimeout(() => {
+        setQuickAssignOpen(false)
+        void loadData(true)
+      }, 700)
+    } else {
+      setAssignError(res.error || 'Não foi possível encaminhar.')
+    }
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
+      {/* 1. TOPO: HEADER DO PAINEL DO DIA */}
       <div className="bg-gradient-to-r from-[#0f2a43] to-[#15466d] rounded-2xl p-6 sm:p-8 text-white shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur text-xs font-semibold text-[#d9995b] mb-2">
             <ShieldCheck className="w-3.5 h-3.5" />
-            Módulo Administrativo ({user?.role?.toUpperCase() || 'ADMIN'})
+            Painel do Dia — Gestão Operacional ({user?.role?.toUpperCase() || 'STAFF'})
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Painel Admin</h1>
-          <p className="text-sm text-gray-200 mt-1 max-w-xl">
-            Visão gerencial da Imobiliária Gabriel: controle de indicações recebidas, pipeline de
-            vendas, corretores e bônus.
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Painel do Dia</h1>
+          <p className="text-sm text-gray-200 mt-1 max-w-2xl leading-relaxed">
+            Priorize o encaminhamento rápido de novos contatos e destrave atendimentos com prazo de
+            SLA vencido.
           </p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void loadData(true)}
+            disabled={isRefreshing || isLoading}
+            className="border-white/20 text-white hover:bg-white/10 bg-white/5 h-10 px-3.5 rounded-xl font-medium"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="ml-2 text-xs">Atualizar</span>
+          </Button>
+
+          <Button
+            asChild
+            className="bg-[#1a5d8f] hover:bg-[#144a72] text-white font-bold h-10 px-4 rounded-xl shadow-sm"
+          >
+            <Link to="/admin/indicacoes" className="flex items-center gap-1.5 text-xs sm:text-sm">
+              <Filter className="w-4 h-4" />
+              <span>Ver Todas as Indicações</span>
+            </Link>
+          </Button>
         </div>
       </div>
 
+      {/* 2. CARDS TOTALIZADORES DO DIA */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-[#e5e0d8] shadow-sm bg-white">
+        {/* Card 1: A Encaminhar (Destaque Principal) */}
+        <Card
+          className={`border shadow-sm transition-all ${
+            toAssignList.length > 0
+              ? 'border-blue-300 bg-blue-50/40 ring-1 ring-blue-300/50'
+              : 'border-[#e5e0d8] bg-white'
+          }`}
+        >
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium text-gray-500">
-              Total de Indicações
-            </CardDescription>
-            <CardTitle className="text-2xl font-bold text-[#0f2a43]">0</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardDescription className="text-xs font-bold uppercase tracking-wider text-blue-900">
+                A Encaminhar
+              </CardDescription>
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse" />
+            </div>
+            <CardTitle className="text-3xl font-extrabold text-[#0f2a43] mt-1">
+              {isLoading ? '...' : toAssignList.length}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-gray-500 flex items-center gap-1">
-              <Building className="w-3.5 h-3.5 text-gray-400" />
-              Todas as categorias
+            <p className="text-xs text-blue-800 font-medium flex items-center gap-1">
+              <Send className="w-3.5 h-3.5 text-blue-600" />
+              Aguardando equipe ou gestor
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-[#e5e0d8] shadow-sm bg-white">
+        {/* Card 2: Atrasadas (Alerta Estático Claro) */}
+        <Card
+          className={`border shadow-sm transition-all ${
+            delayedList.length > 0
+              ? 'border-amber-400 bg-amber-50/50 ring-1 ring-amber-400/50'
+              : 'border-[#e5e0d8] bg-white'
+          }`}
+        >
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium text-gray-500">
-              Indicadores Cadastrados
-            </CardDescription>
-            <CardTitle className="text-2xl font-bold text-[#1a5d8f]">1</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardDescription className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                Atrasadas (SLA)
+              </CardDescription>
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+            </div>
+            <CardTitle className="text-3xl font-extrabold text-amber-900 mt-1">
+              {isLoading ? '...' : delayedList.length}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-[#1a5d8f] flex items-center gap-1">
-              <Users className="w-3.5 h-3.5" />
-              Perfis vinculados
+            <p className="text-xs text-amber-800 font-medium flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-amber-600" />
+              Prazo limite de 3h expirado
             </p>
           </CardContent>
         </Card>
 
+        {/* Card 3: Total Geral */}
         <Card className="border-[#e5e0d8] shadow-sm bg-white">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium text-gray-500">
-              Em Negociação
-            </CardDescription>
-            <CardTitle className="text-2xl font-bold text-amber-600">0</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardDescription className="text-xs font-medium text-gray-500">
+                Total Registrado
+              </CardDescription>
+              <Building className="w-4 h-4 text-gray-400" />
+            </div>
+            <CardTitle className="text-3xl font-extrabold text-[#0f2a43] mt-1">
+              {isLoading ? '...' : totalCount}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-amber-600 flex items-center gap-1">
-              <ArrowUpRight className="w-3.5 h-3.5" />
-              Pipeline ativo
-            </p>
+            <p className="text-xs text-gray-500">Histórico acumulado</p>
           </CardContent>
         </Card>
 
+        {/* Card 4: Concluídas / Fechadas */}
         <Card className="border-[#e5e0d8] shadow-sm bg-white">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium text-gray-500">
-              Bônus a Pagar
-            </CardDescription>
-            <CardTitle className="text-2xl font-bold text-emerald-600">R$ 0,00</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardDescription className="text-xs font-medium text-gray-500">
+                Finalizadas
+              </CardDescription>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            </div>
+            <CardTitle className="text-3xl font-extrabold text-emerald-700 mt-1">
+              {isLoading ? '...' : completedCount}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-emerald-600">Aguardando fechamentos</p>
+            <p className="text-xs text-emerald-700 font-medium">Contratos ou finalizadas</p>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-[#e5e0d8] shadow-sm bg-white">
-        <CardHeader className="border-b border-[#e5e0d8] pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-[#1a5d8f]" />
-              <CardTitle className="text-lg font-bold text-[#0f2a43]">
-                Painel Geral de Indicações
-              </CardTitle>
+      {/* 3. SEÇÃO 1: INDICAÇÕES A ENCAMINHAR (AÇÃO IMEDIATA) */}
+      <Card className="border-[#e5e0d8] shadow-sm bg-white overflow-hidden">
+        <CardHeader className="border-b border-[#e5e0d8] pb-4 bg-gradient-to-r from-blue-50/40 via-white to-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <Send className="w-5 h-5 text-[#1a5d8f]" />
+                <CardTitle className="text-lg font-bold text-[#0f2a43]">
+                  Indicações a Encaminhar ({toAssignList.length})
+                </CardTitle>
+              </div>
+              <CardDescription className="text-xs text-gray-500">
+                Indicações recebidas que ainda não foram direcionadas para nenhuma equipe ou gestor.
+              </CardDescription>
             </div>
-            <Badge variant="outline" className="border-[#e5e0d8] text-gray-600">
-              Esqueleto Ativo
-            </Badge>
           </div>
-          <CardDescription>
-            Tabela operacional com status, corretor atribuído e aprovação de bônus.
-          </CardDescription>
         </CardHeader>
-        <CardContent className="pt-10 pb-14 text-center">
-          <div className="max-w-md mx-auto space-y-3">
-            <div className="w-12 h-12 rounded-full bg-[#faf7f2] border border-[#e5e0d8] flex items-center justify-center mx-auto text-[#1a5d8f]">
-              <ShieldCheck className="w-6 h-6" />
+
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="py-12 text-center text-gray-500 text-sm">
+              Carregando indicações a encaminhar...
             </div>
-            <h3 className="text-base font-semibold text-[#0f2a43]">Conteúdo em breve</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Aqui a equipa interna poderá gerenciar status, transferir contatos entre corretores e
-              auditar o funil de indicações.
-            </p>
-          </div>
+          ) : toAssignList.length === 0 ? (
+            <div className="py-10 px-4 text-center max-w-md mx-auto space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-bold text-[#0f2a43]">Tudo encaminhado!</h4>
+              <p className="text-xs text-gray-500">
+                Não há nenhuma indicação aguardando encaminhamento neste momento. Bom trabalho!
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-[#e5e0d8]">
+              {toAssignList.map((ref) => {
+                const typeInfo = getPropertyTypeLabel(ref.property_type)
+                const statusCfg = getStatusConfig(ref.status)
+                const TypeIcon = typeInfo.icon
+                const indicatorName = ref.expand?.indicator_id?.full_name || 'Indicador parceiro'
+
+                return (
+                  <div
+                    key={ref.id}
+                    onClick={() => navigate(`/admin/indicacao/${ref.id}`)}
+                    className="p-4 sm:p-5 hover:bg-[#faf7f2]/80 transition-colors cursor-pointer flex flex-col md:flex-row md:items-center md:justify-between gap-4 group"
+                  >
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-bold text-base text-[#0f2a43] group-hover:text-[#1a5d8f] transition-colors">
+                          {ref.client_name}
+                        </span>
+
+                        <Badge
+                          variant="outline"
+                          className="bg-white text-gray-700 border-[#e5e0d8] text-xs font-medium inline-flex items-center gap-1"
+                        >
+                          <TypeIcon className="w-3 h-3 text-[#1a5d8f]" />
+                          <span>{typeInfo.label}</span>
+                        </Badge>
+
+                        <Badge
+                          className={`${statusCfg.badgeClass} text-xs font-semibold px-2 py-0.5`}
+                        >
+                          {statusCfg.label}
+                        </Badge>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                        {ref.client_phone && (
+                          <span className="inline-flex items-center gap-1 text-gray-700 font-medium">
+                            <Phone className="w-3 h-3 text-gray-400" />
+                            {formatPhone(ref.client_phone)}
+                          </span>
+                        )}
+
+                        <span className="inline-flex items-center gap-1 text-gray-600">
+                          <Users className="w-3 h-3 text-gray-400" />
+                          Indicado por: <strong className="text-gray-800">{indicatorName}</strong>
+                        </span>
+
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-gray-400" />
+                          {formatDateTime(ref.created)}
+                        </span>
+                      </div>
+
+                      {ref.property_description && (
+                        <p className="text-xs text-gray-600 line-clamp-1 italic max-w-2xl pt-0.5">
+                          "{ref.property_description}"
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#e5e0d8] justify-between md:justify-end">
+                      <Button
+                        type="button"
+                        onClick={(e) => handleOpenQuickAssign(ref, e)}
+                        className="bg-[#1a5d8f] hover:bg-[#144a72] text-white font-semibold text-xs h-9 px-3.5 rounded-xl shadow-xs"
+                      >
+                        <Send className="w-3.5 h-3.5 mr-1.5" />
+                        Encaminhar Agora
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-400 group-hover:text-[#1a5d8f] p-1.5 h-9 w-9"
+                        title="Ver detalhes"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* 4. SEÇÃO 2: INDICAÇÕES ATRASADAS (SLA) */}
+      <Card className="border-[#e5e0d8] shadow-sm bg-white overflow-hidden">
+        <CardHeader className="border-b border-[#e5e0d8] pb-4 bg-gradient-to-r from-amber-50/40 via-white to-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                <CardTitle className="text-lg font-bold text-[#0f2a43]">
+                  Indicações Atrasadas ({delayedList.length})
+                </CardTitle>
+              </div>
+              <CardDescription className="text-xs text-gray-500">
+                Oportunidades em que o prazo inicial de 3 horas expirou sem conclusão.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="py-12 text-center text-gray-500 text-sm">
+              Carregando indicações atrasadas...
+            </div>
+          ) : delayedList.length === 0 ? (
+            <div className="py-10 px-4 text-center max-w-md mx-auto space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-bold text-[#0f2a43]">Nenhum atraso no momento!</h4>
+              <p className="text-xs text-gray-500">
+                Todas as indicações em aberto estão dentro do prazo estipulado de SLA.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-[#e5e0d8]">
+              {delayedList.map((ref) => {
+                const typeInfo = getPropertyTypeLabel(ref.property_type)
+                const statusCfg = getStatusConfig(ref.status)
+                const TypeIcon = typeInfo.icon
+                const indicatorName = ref.expand?.indicator_id?.full_name || 'Indicador parceiro'
+                const assignedTeamName = ref.expand?.assigned_team_id?.name
+                const assignedMgrName = ref.expand?.assigned_manager_id?.name
+
+                return (
+                  <div
+                    key={ref.id}
+                    onClick={() => navigate(`/admin/indicacao/${ref.id}`)}
+                    className="p-4 sm:p-5 hover:bg-amber-50/30 transition-colors cursor-pointer flex flex-col md:flex-row md:items-center md:justify-between gap-4 group"
+                  >
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-bold text-base text-[#0f2a43] group-hover:text-amber-800 transition-colors">
+                          {ref.client_name}
+                        </span>
+
+                        <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-xs font-bold inline-flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-700" />
+                          <span>SLA Expirado</span>
+                        </Badge>
+
+                        <Badge
+                          variant="outline"
+                          className="bg-white text-gray-700 border-[#e5e0d8] text-xs font-medium inline-flex items-center gap-1"
+                        >
+                          <TypeIcon className="w-3 h-3 text-[#1a5d8f]" />
+                          <span>{typeInfo.label}</span>
+                        </Badge>
+
+                        <Badge
+                          className={`${statusCfg.badgeClass} text-xs font-semibold px-2 py-0.5`}
+                        >
+                          {statusCfg.label}
+                        </Badge>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                        {ref.client_phone && (
+                          <span className="inline-flex items-center gap-1 text-gray-700 font-medium">
+                            <Phone className="w-3 h-3 text-gray-400" />
+                            {formatPhone(ref.client_phone)}
+                          </span>
+                        )}
+
+                        <span className="inline-flex items-center gap-1 text-gray-600">
+                          <Users className="w-3 h-3 text-gray-400" />
+                          Indicado por: <strong>{indicatorName}</strong>
+                        </span>
+
+                        {assignedTeamName && (
+                          <span className="inline-flex items-center gap-1 text-blue-700 font-medium">
+                            <Building className="w-3 h-3" />
+                            Equipe: {assignedTeamName}
+                          </span>
+                        )}
+
+                        {assignedMgrName && (
+                          <span className="inline-flex items-center gap-1 text-blue-700 font-medium">
+                            Responsável: {assignedMgrName}
+                          </span>
+                        )}
+
+                        <span className="inline-flex items-center gap-1 text-amber-700">
+                          <Clock className="w-3 h-3" />
+                          Prazo era: {formatDateTime(ref.sla_deadline)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#e5e0d8] justify-between md:justify-end">
+                      <Button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/admin/indicacao/${ref.id}`)
+                        }}
+                        variant="outline"
+                        className="border-amber-300 text-amber-900 hover:bg-amber-100 font-semibold text-xs h-9 px-3.5 rounded-xl"
+                      >
+                        Abrir e Cobrar
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-400 group-hover:text-amber-800 p-1.5 h-9 w-9"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 5. MODAL DE ENCAMINHAMENTO RÁPIDO */}
+      <Dialog open={quickAssignOpen} onOpenChange={setQuickAssignOpen}>
+        <DialogContent className="max-w-md bg-white rounded-2xl border-[#e5e0d8]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-[#0f2a43] flex items-center gap-2">
+              <Send className="w-5 h-5 text-[#1a5d8f]" />
+              Encaminhar Indicação
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">
+              {selectedReferral && (
+                <span>
+                  Cliente indicado:{' '}
+                  <strong className="text-gray-800">{selectedReferral.client_name}</strong>
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2 text-sm">
+            {/* Escolha da Equipe */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-700">Equipe de Destino</label>
+              <Select value={targetTeamId} onValueChange={setTargetTeamId}>
+                <SelectTrigger className="rounded-xl border-[#e5e0d8] h-10 text-xs">
+                  <SelectValue placeholder="Selecione a equipe comercial..." />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-[#e5e0d8] rounded-xl">
+                  {teams.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      Nenhuma equipe cadastrada
+                    </SelectItem>
+                  ) : (
+                    teams.map((t) => (
+                      <SelectItem key={t.id} value={t.id} className="text-xs">
+                        {t.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Escolha do Gestor / Responsável */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-700">
+                Gestor / Corretor Responsável
+              </label>
+              <Select value={targetManagerId} onValueChange={setTargetManagerId}>
+                <SelectTrigger className="rounded-xl border-[#e5e0d8] h-10 text-xs">
+                  <SelectValue placeholder="Selecione o gestor ou líder..." />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-[#e5e0d8] rounded-xl">
+                  {managers.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      Nenhum gestor encontrado
+                    </SelectItem>
+                  ) : (
+                    managers.map((m) => (
+                      <SelectItem key={m.id} value={m.id} className="text-xs">
+                        {m.name} ({m.role})
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {assignError && (
+              <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200">
+                {assignError}
+              </p>
+            )}
+
+            {assignSuccess && (
+              <p className="text-xs text-emerald-700 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                {assignSuccess}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setQuickAssignOpen(false)}
+              disabled={isSubmittingAssign}
+              className="rounded-xl border-[#e5e0d8] text-xs h-10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmAssign}
+              disabled={isSubmittingAssign}
+              className="bg-[#1a5d8f] hover:bg-[#144a72] text-white font-bold rounded-xl text-xs h-10"
+            >
+              {isSubmittingAssign ? 'Encaminhando...' : 'Confirmar Encaminhamento'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

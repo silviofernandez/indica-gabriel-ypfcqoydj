@@ -195,6 +195,10 @@ export interface ReferralRecord {
   expected_value?: number
   status: ReferralStatus
   assigned_to?: string
+  assigned_team_id?: string
+  assigned_manager_id?: string
+  assigned_by?: string
+  assigned_at?: string
   notes?: string
   raw_transcription?: string
   sla_deadline?: string
@@ -206,8 +210,69 @@ export interface ReferralRecord {
       id: string
       full_name?: string
       user_id?: string
+      phone?: string
+      email?: string
+      pix_key?: string
+      pix_key_type?: string
+    }
+    assigned_team_id?: {
+      id: string
+      name: string
+      leader_id?: string
+    }
+    assigned_manager_id?: {
+      id: string
+      name: string
+      email?: string
+    }
+    assigned_by?: {
+      id: string
+      name: string
     }
   }
+}
+
+export interface ReferralStatusHistoryRecord {
+  id: string
+  referral_id: string
+  old_status?: string
+  new_status: string
+  changed_by?: string
+  notes?: string
+  created: string
+  updated: string
+  expand?: {
+    changed_by?: {
+      id: string
+      name: string
+      email?: string
+    }
+  }
+}
+
+export interface TeamRecord {
+  id: string
+  name: string
+  description?: string
+  leader_id?: string
+  active?: boolean
+  created: string
+  updated: string
+  expand?: {
+    leader_id?: {
+      id: string
+      name: string
+      email?: string
+    }
+  }
+}
+
+export interface TeamManagerUser {
+  id: string
+  name: string
+  email: string
+  role?: string
+  team_id?: string
 }
 
 export type BonusType =
@@ -286,6 +351,200 @@ export async function transcribeReferralAudio(audioBlob: Blob): Promise<{
       success: false,
       error: errorMsg,
     }
+  }
+}
+
+/**
+ * Lista todas as indicações (visão administrativa para operador, gerente ou master)
+ */
+export async function listAllReferrals(options?: {
+  filter?: string
+  sort?: string
+  page?: number
+  perPage?: number
+}): Promise<{ items: ReferralRecord[]; totalItems: number }> {
+  try {
+    const res = await pb
+      .collection('referrals')
+      .getList<ReferralRecord>(options?.page || 1, options?.perPage || 200, {
+        filter: options?.filter,
+        sort: options?.sort || '-created',
+        expand: 'indicator_id,assigned_team_id,assigned_manager_id,assigned_by',
+      })
+    return {
+      items: res.items,
+      totalItems: res.totalItems,
+    }
+  } catch (err) {
+    console.warn('Erro ao listar todas as indicações:', err)
+    return { items: [], totalItems: 0 }
+  }
+}
+
+/**
+ * Obtém uma única indicação pelo ID com todas as expansões (indicador, equipe, gestor)
+ */
+export async function getReferralById(id: string): Promise<ReferralRecord | null> {
+  try {
+    const rec = await pb.collection('referrals').getOne<ReferralRecord>(id, {
+      expand: 'indicator_id,assigned_team_id,assigned_manager_id,assigned_by',
+    })
+    return rec
+  } catch (err) {
+    console.warn('Erro ao buscar indicação por ID:', err)
+    return null
+  }
+}
+
+/**
+ * Lista o histórico de status de uma indicação específica
+ */
+export async function listReferralStatusHistory(
+  referralId: string,
+): Promise<ReferralStatusHistoryRecord[]> {
+  try {
+    const records = await pb
+      .collection('referral_status_history')
+      .getFullList<ReferralStatusHistoryRecord>({
+        filter: `referral_id = "${referralId}"`,
+        sort: '-created',
+        expand: 'changed_by',
+      })
+    return records
+  } catch (err) {
+    console.warn('Erro ao listar histórico de status:', err)
+    return []
+  }
+}
+
+/**
+ * Lista as equipes ativas do sistema
+ */
+export async function listTeams(): Promise<TeamRecord[]> {
+  try {
+    const records = await pb.collection('teams').getFullList<TeamRecord>({
+      filter: 'active = true || active = null',
+      sort: 'name',
+      expand: 'leader_id',
+    })
+    return records
+  } catch (err) {
+    console.warn('Erro ao listar equipes:', err)
+    return []
+  }
+}
+
+/**
+ * Lista gestores e líderes elegíveis para atribuição
+ */
+export async function listTeamManagers(): Promise<TeamManagerUser[]> {
+  try {
+    // Busca perfis com role 'manager' ou 'master' ou 'operator'
+    const profiles = await pb.collection('profiles').getFullList({
+      filter: 'role = "manager" || role = "master" || role = "operator"',
+      sort: 'name',
+      expand: 'user_id',
+    })
+
+    return profiles.map((p) => ({
+      id: p.user_id,
+      name: p.name || p.email,
+      email: p.email,
+      role: p.role,
+      team_id: p.team_id,
+    }))
+  } catch (err) {
+    console.warn('Erro ao listar gestores:', err)
+    return []
+  }
+}
+
+export interface AssignReferralPayload {
+  referral_id: string
+  assigned_team_id?: string
+  assigned_manager_id?: string
+}
+
+export interface AssignReferralResponse {
+  success: boolean
+  message: string
+  referral_id?: string
+  assigned_team_id?: string | null
+  assigned_manager_id?: string | null
+  assigned_by?: string
+  assigned_at?: string
+  status?: string
+  error?: string
+}
+
+/**
+ * Chama o endpoint backend para encaminhar a indicação (assign-referral)
+ */
+export async function assignReferral(
+  payload: AssignReferralPayload,
+): Promise<{ success: boolean; data?: AssignReferralResponse; error?: string }> {
+  try {
+    const res = await pb.send<AssignReferralResponse>('/backend/v1/assign-referral', {
+      method: 'POST',
+      body: {
+        referral_id: payload.referral_id,
+        assigned_team_id: payload.assigned_team_id,
+        assigned_manager_id: payload.assigned_manager_id,
+      },
+    })
+    return { success: true, data: res }
+  } catch (err: unknown) {
+    const errorObj = err as { response?: { error?: string; message?: string }; message?: string }
+    const errorMsg =
+      errorObj?.response?.error ||
+      errorObj?.response?.message ||
+      errorObj?.message ||
+      'Não foi possível encaminhar a indicação.'
+    return { success: false, error: errorMsg }
+  }
+}
+
+export interface UpdateReferralStatusPayload {
+  referral_id: string
+  status: string
+  notes?: string
+}
+
+export interface UpdateReferralStatusResponse {
+  success: boolean
+  message: string
+  referral_id?: string
+  old_status?: string
+  new_status?: string
+  notes?: string
+  history_id?: string
+  error?: string
+}
+
+/**
+ * Chama o endpoint backend para atualizar status da indicação (update-referral-status)
+ */
+export async function updateReferralStatus(
+  payload: UpdateReferralStatusPayload,
+): Promise<{ success: boolean; data?: UpdateReferralStatusResponse; error?: string }> {
+  try {
+    const res = await pb.send<UpdateReferralStatusResponse>('/backend/v1/update-referral-status', {
+      method: 'POST',
+      body: {
+        referral_id: payload.referral_id,
+        status: payload.status,
+        notes: payload.notes || '',
+      },
+    })
+    return { success: true, data: res }
+  } catch (err: unknown) {
+    const errorObj = err as { response?: { error?: string; message?: string }; message?: string }
+    const errorMsg =
+      errorObj?.response?.error ||
+      errorObj?.response?.message ||
+      errorObj?.message ||
+      'Não foi possível atualizar o status da indicação.'
+    return { success: false, error: errorMsg }
   }
 }
 
