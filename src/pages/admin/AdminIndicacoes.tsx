@@ -29,19 +29,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { listAllReferrals, type ReferralRecord } from '@/services/referrals'
+import { useRealtime } from '@/hooks/use-realtime'
+import { listAllReferrals, getReferralById, type ReferralRecord } from '@/services/referrals'
 import { formatPhone } from '@/services/indicators'
 import {
   getStatusConfig,
   getPropertyTypeLabel,
   formatDateTime,
 } from '@/pages/indicador/IndicadorDashboard'
+import { evaluateReferralSla } from '@/lib/sla'
 
 export default function AdminIndicacoes() {
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [referrals, setReferrals] = useState<ReferralRecord[]>([])
+  const [nowMs, setNowMs] = useState<number>(() => Date.now())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowMs(Date.now())
+    }, 15000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useRealtime<ReferralRecord>(
+    'referrals',
+    useCallback(async (e) => {
+      const { action, record } = e
+      if (!record || !record.id) return
+
+      if (action === 'delete') {
+        setReferrals((prev) => prev.filter((r) => r.id !== record.id))
+        return
+      }
+
+      const enriched = await getReferralById(record.id)
+      const recordToUse = enriched || record
+
+      setReferrals((prev) => {
+        const index = prev.findIndex((r) => r.id === recordToUse.id)
+        if (index >= 0) {
+          const next = [...prev]
+          next[index] = recordToUse
+          return next
+        }
+        return [recordToUse, ...prev]
+      })
+    }, []),
+    true,
+  )
 
   // Filtros
   const [searchQuery, setSearchQuery] = useState('')
@@ -264,19 +301,45 @@ export default function AdminIndicacoes() {
                 const indicatorName = ref.expand?.indicator_id?.full_name || 'Indicador parceiro'
                 const assignedTeamName = ref.expand?.assigned_team_id?.name
                 const assignedMgrName = ref.expand?.assigned_manager_id?.name
+                const sla = evaluateReferralSla(ref, nowMs)
 
                 return (
                   <div
                     key={ref.id}
                     onClick={() => navigate(`/admin/indicacao/${ref.id}`)}
-                    className="p-4 sm:p-5 hover:bg-[#faf7f2]/70 transition-colors cursor-pointer flex flex-col md:flex-row md:items-center md:justify-between gap-4 group"
+                    className={`p-4 sm:p-5 transition-colors cursor-pointer flex flex-col md:flex-row md:items-center md:justify-between gap-4 group ${
+                      sla.isBreached
+                        ? 'bg-red-50/40 hover:bg-red-50/70 border-l-4 border-l-red-600'
+                        : 'hover:bg-[#faf7f2]/70'
+                    }`}
                   >
                     {/* Dados do Indicado */}
                     <div className="space-y-1.5 flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-bold text-base text-[#0f2a43] group-hover:text-[#1a5d8f] transition-colors">
+                        <span
+                          className={`font-bold text-base transition-colors ${
+                            sla.isBreached
+                              ? 'text-red-950 group-hover:text-red-700'
+                              : 'text-[#0f2a43] group-hover:text-[#1a5d8f]'
+                          }`}
+                        >
                           {ref.client_name}
                         </span>
+
+                        {sla.isBreached ? (
+                          <Badge className="bg-red-600 text-white hover:bg-red-700 border-red-700 text-xs font-bold inline-flex items-center gap-1 shadow-xs animate-pulse">
+                            <AlertTriangle className="w-3 h-3 text-white" />
+                            <span>SLA atrasado</span>
+                          </Badge>
+                        ) : sla.remainingFormatted ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-emerald-50 text-emerald-800 border-emerald-300 text-xs font-semibold inline-flex items-center gap-1"
+                          >
+                            <Clock className="w-3 h-3 text-emerald-600" />
+                            <span>{sla.remainingFormatted}</span>
+                          </Badge>
+                        ) : null}
 
                         <Badge
                           variant="outline"

@@ -213,11 +213,11 @@ export default function AdminIndicacaoDetalhe() {
   // Cálculo de SLA
   const now = new Date().getTime()
   const isSlaDelayed =
-    referral.sla_deadline &&
-    new Date(referral.sla_deadline).getTime() < now &&
     !['closed_won', 'closed', 'paid', 'bonus_paid', 'closed_lost', 'cancelled', 'expired'].includes(
-      referral.status.toLowerCase(),
-    )
+      (referral.status || '').toLowerCase(),
+    ) &&
+    (Boolean(referral.sla_breached) ||
+      (Boolean(referral.sla_deadline) && new Date(referral.sla_deadline).getTime() < now))
 
   return (
     <div className="space-y-6 pb-16">
@@ -243,8 +243,9 @@ export default function AdminIndicacaoDetalhe() {
                 {statusCfg.label}
               </Badge>
               {isSlaDelayed && (
-                <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-xs font-bold">
-                  SLA Vencido
+                <Badge className="bg-red-600 text-white hover:bg-red-700 border-red-700 text-xs font-bold inline-flex items-center gap-1 shadow-xs animate-pulse">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>SLA atrasado</span>
                 </Badge>
               )}
             </div>
