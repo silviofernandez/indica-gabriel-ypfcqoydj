@@ -243,9 +243,15 @@ export default function Cadastro() {
                 </Alert>
               )}
 
-              {/* Topo do Formulário com Marcação Clássica Gabriel */}
+              {/* Topo do Formulário com a Bola G Oficial */}
               <div className="flex items-center justify-between pb-4 border-b border-[#e5e0d8] mb-2">
-                <GabrielLogo variant="responsive" size={32} />
+                <div className="flex items-center gap-2.5">
+                  <GabrielLogo variant="symbol" size={36} />
+                  <div className="flex flex-col leading-tight">
+                    <span className="font-bold text-sm text-[#0f2a43]">Indica Gabriel</span>
+                    <span className="text-[10px] text-gray-500">Imobiliária Gabriel</span>
+                  </div>
+                </div>
                 <span className="text-xs font-semibold text-[#14522a] bg-[#14522a]/10 px-2.5 py-1 rounded-full">
                   Ficha de Adesão
                 </span>

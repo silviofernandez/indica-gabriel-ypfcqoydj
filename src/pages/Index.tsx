@@ -28,8 +28,8 @@ export default function Index() {
             {/* Bloco de Texto (Desliza da esquerda) */}
             <div className="lg:col-span-7 flex flex-col items-start space-y-6 text-left animate-fade-in-up">
               {/* Badge com Logo G Oficial legível */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#d9995b] text-xs font-semibold uppercase tracking-wider">
-                <GabrielLogo variant="symbol" size={20} inverted />
+              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#d9995b] text-xs font-semibold uppercase tracking-wider">
+                <GabrielLogo variant="symbol" size={22} inverted />
                 <span>Programa Oficial de Indicações</span>
               </div>
 
@@ -98,9 +98,9 @@ export default function Index() {
                   {/* Cabeçalho do Card */}
                   <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                     <div className="flex items-center gap-2.5">
-                      <GabrielLogo variant="symbol" size={36} />
+                      <GabrielLogo variant="symbol" size={40} />
                       <div>
-                        <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                           Imobiliária Gabriel
                         </h4>
                         <p className="text-sm font-bold text-[#0f2a43]">ID #IND-2025-042</p>

@@ -2,17 +2,22 @@
  * Gabriel Branding Assets - Indica Gabriel
  *
  * Arquivo central de caminhos e referências visuais oficiais da Imobiliária Gabriel.
- * Permite manutenção simplificada pelo usuário:
+ * Permite ao usuário substituir os arquivos posteriormente em /public/branding/ ou em /src/assets/branding/
+ * sem quebrar o código:
  *
- * Pastas onde os arquivos originais residem:
- * - public/branding/g-symbol.jpeg (Símbolo G isolado original)
- * - public/branding/logo-completo.jpeg (Logo horizontal completo com G + Gabriel + Inovações Imobiliárias + CRECI)
- * - public/branding/logo-texto.jpeg (Wordmark Gabriel + Inovações Imobiliárias + CRECI sem a bola)
+ * 1. Símbolo G isolado (a bola G oficial):
+ *    - Origem: src/assets/img2016-69cdb.jpeg
+ *    - Distribuído em: public/branding/g-symbol.jpeg
  *
- * Também importamos via bundler Vite (em src/assets/branding/) para hash de cache e carregamento direto.
+ * 2. Logo Completo (horizontal com Bola G + Gabriel + Inovações Imobiliárias + CRECI 29.083-J):
+ *    - Origem: src/assets/img2018-d5709.jpeg
+ *    - Distribuído em: public/branding/logo-completo.jpeg
+ *
+ * 3. Wordmark / Logo só texto (sem a bola G):
+ *    - Origem: src/assets/img2019-e0ea7.jpeg
+ *    - Distribuído em: public/branding/logo-texto.jpeg
  */
 
-// Importações dos ativos oficiais empacotados pelo Vite
 import gSymbolOrig from '@/assets/branding/g-symbol.jpeg'
 import logoCompletoOrig from '@/assets/branding/logo-completo.jpeg'
 import logoTextoOrig from '@/assets/branding/logo-texto.jpeg'
@@ -20,7 +25,7 @@ import logoTextoOrig from '@/assets/branding/logo-texto.jpeg'
 export interface BrandAssetConfig {
   /** Caminho do arquivo processado/importado pelo Vite */
   src: string
-  /** Caminho público direto servido em /branding/... */
+  /** Caminho público direto servido em /branding/... para fácil substituição estática */
   publicPath: string
   /** Texto alternativo acessível */
   alt: string
@@ -30,9 +35,10 @@ export interface BrandAssetConfig {
 
 export const GABRIEL_BRAND = {
   // Paleta oficial retirada dos assets enviados
-  limeGreen: '#66cc33', // Verde-limão vibrante oficial dos logos 2 e 3
-  darkGreen: '#1b4d24', // Verde clássico da imagem 1
-  darkBg: '#0f171d', // Fundo escuro oficial
+  limeGreen: '#66cc33',
+  darkGreen: '#1b4d24',
+  darkBg: '#0f171d',
+  navyBg: '#0f2a43',
   creci: '29.083-J',
   companyName: 'Imobiliária Gabriel',
   tagline: 'Inovações Imobiliárias',
@@ -42,7 +48,7 @@ export const GABRIEL_BRAND = {
       src: gSymbolOrig,
       publicPath: '/branding/g-symbol.jpeg',
       alt: 'Símbolo G Oficial — Imobiliária Gabriel',
-      aspectRatio: 1, // Circular 1203 x 1214
+      aspectRatio: 1, // 1203 x 1214 (~1:1)
     },
     full: {
       src: logoCompletoOrig,

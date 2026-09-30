@@ -172,15 +172,21 @@ export default function Layout() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
-            {/* Logo Marca com o G Oficial da Imobiliária Gabriel */}
+            {/* Logo Marca Oficial da Imobiliária Gabriel: canto superior esquerdo só a bola G no mobile e desktop */}
             <Link
               to={user ? (isStaff ? '/admin' : '/indicador') : '/'}
-              className="flex items-center group focus:outline-none focus:ring-2 focus:ring-[#14522a] rounded-xl p-1 transition-transform hover:scale-[1.02]"
+              className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#14522a] rounded-2xl p-1.5 transition-transform hover:scale-[1.03]"
               title="Indica Gabriel — Imobiliária Gabriel"
             >
-              <div className="flex items-center gap-2.5">
-                {/* G Verde Oficial: no mobile apenas o G, no desktop G + Gabriel */}
-                <GabrielLogo variant="responsive" size={40} />
+              {/* Canto superior esquerdo: a bola G oficial isolada */}
+              <GabrielLogo variant="symbol" size={44} />
+              <div className="flex flex-col leading-tight">
+                <span className="font-extrabold text-base sm:text-lg text-[#0f2a43] tracking-tight group-hover:text-[#1a5d8f] transition-colors">
+                  Indica Gabriel
+                </span>
+                <span className="text-[10px] text-gray-500 font-semibold tracking-wider uppercase">
+                  Imobiliária Gabriel
+                </span>
               </div>
             </Link>
 
@@ -546,9 +552,17 @@ export default function Layout() {
             }`}
           >
             <div className="overflow-y-auto">
-              {/* Header do Drawer com Logo G da Gabriel */}
+              {/* Header do Drawer com Bola G da Gabriel */}
               <div className="flex items-center justify-between pb-5 border-b border-[#e5e0d8]">
-                <GabrielLogo variant="full" size={38} showTagline={false} />
+                <div className="flex items-center gap-2.5">
+                  <GabrielLogo variant="symbol" size={40} />
+                  <div className="flex flex-col leading-tight">
+                    <span className="font-bold text-base text-[#0f2a43]">Indica Gabriel</span>
+                    <span className="text-[10px] text-gray-500 font-medium">
+                      Imobiliária Gabriel
+                    </span>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
@@ -904,8 +918,15 @@ export default function Layout() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pb-12 border-b border-white/10">
             {/* Coluna 1: Marca com Logo Gabriel Clássico */}
             <div className="flex flex-col space-y-4">
-              {/* Logo Completo Clássico G + Gabriel */}
-              <GabrielLogo variant="full" size={44} inverted showTagline />
+              {/* Logo Completo Oficial no Rodapé (img2018 com G + Gabriel + Inovações + CRECI) */}
+              <div>
+                <GabrielLogo
+                  variant="full"
+                  size={54}
+                  inverted
+                  alt="Logo Oficial Gabriel Inovações Imobiliárias"
+                />
+              </div>
 
               <p className="text-sm text-gray-300 leading-relaxed max-w-sm">
                 Conectando você às melhores oportunidades do mercado imobiliário em Jaú,
@@ -924,7 +945,7 @@ export default function Layout() {
 
               <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Imobiliária Gabriel • CRECI 17.051</span>
+                <span>Imobiliária Gabriel • CRECI 29.083-J</span>
               </div>
             </div>
             {/* Coluna 2: Links Rápidos */}
@@ -1020,7 +1041,7 @@ export default function Layout() {
           {/* Linha Inferior */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-400 gap-4">
             <p>
-              © 2025 Indica Gabriel — Imobiliária Gabriel • CRECI 17.051. Todos os direitos
+              © 2025 Indica Gabriel — Imobiliária Gabriel • CRECI 29.083-J. Todos os direitos
               reservados.
             </p>
             <p className="flex items-center gap-1">

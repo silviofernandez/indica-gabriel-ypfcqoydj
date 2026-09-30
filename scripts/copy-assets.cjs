@@ -5,14 +5,14 @@ const path = require('path')
  * Script de pré-compilação para padronizar e distribuir os assets oficiais da marca Gabriel.
  *
  * Arquivos oficiais de entrada em src/assets/:
- * - img2016-69cdb.jpeg -> Imagem 1: Símbolo G circular isolado
- * - img2018-d5709.jpeg -> Imagem 2: Logo horizontal completo (G + Gabriel + Inovações + CRECI 29.083-J)
- * - img2019-e0ea7.jpeg -> Imagem 3: Logo horizontal só texto (Gabriel + Inovações + CRECI 29.083-J)
+ * - img2016-69cdb.jpeg -> Símbolo G circular oficial (bola isolada)
+ * - img2018-d5709.jpeg -> Logo horizontal completo (G + Gabriel + Inovações Imobiliárias + CRECI 29.083-J)
+ * - img2019-e0ea7.jpeg -> Wordmark só texto (Gabriel + Inovações Imobiliárias + CRECI 29.083-J)
  *
- * Distribui para:
+ * Distribui de forma direta e limpa para:
  * 1. src/assets/branding/ (g-symbol.jpeg, logo-completo.jpeg, logo-texto.jpeg)
  * 2. public/branding/ (g-symbol.jpeg, logo-completo.jpeg, logo-texto.jpeg)
- * 3. public/logo-gabriel.png (compatibilidade legada)
+ * 3. public/ (fallback legado logo-gabriel.png, g-symbol.jpeg)
  */
 
 try {
@@ -32,21 +32,20 @@ try {
 
   map.forEach(({ src, name }) => {
     if (fs.existsSync(src)) {
-      // Copia para src/assets/branding
       fs.copyFileSync(src, path.join(srcBranding, name))
-      // Copia para public/branding
       fs.copyFileSync(src, path.join(publicBranding, name))
-      console.log(`Copied ${name} to src/assets/branding and public/branding`)
+      console.log(`[copy-assets] Copied ${name} to src/assets/branding and public/branding`)
     } else {
-      console.warn(`Source file not found: ${src}`)
+      console.warn(`[copy-assets] Source file not found: ${src}`)
     }
   })
 
-  // Fallback de compatibilidade
+  // Compatibilidade legada para referências em public/
   const symbolSrc = path.join(srcAssets, 'img2016-69cdb.jpeg')
   if (fs.existsSync(symbolSrc)) {
     fs.copyFileSync(symbolSrc, path.join(rootDir, 'public/logo-gabriel.png'))
+    fs.copyFileSync(symbolSrc, path.join(rootDir, 'public/g-symbol.jpeg'))
   }
 } catch (err) {
-  console.error('Error copying branding assets:', err)
+  console.error('[copy-assets] Error copying branding assets:', err)
 }
