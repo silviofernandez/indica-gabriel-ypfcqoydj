@@ -1,18 +1,15 @@
 const fs = require('fs')
 const path = require('path')
 
-console.log('Testing modules...')
-const modules = ['canvas', 'sharp', 'jimp', 'jpeg-js', 'pngjs']
-const available = {}
+const modules = ['canvas', 'sharp', 'jimp', 'zlib', 'pngjs', 'jpeg-js']
+const res = {}
 modules.forEach((m) => {
   try {
     require(m)
-    available[m] = true
+    res[m] = true
   } catch (e) {
-    available[m] = false
+    res[m] = false
   }
 })
-fs.writeFileSync(
-  path.resolve(__dirname, 'available-modules.json'),
-  JSON.stringify(available, null, 2),
-)
+
+fs.writeFileSync(path.resolve(__dirname, 'modules-result.json'), JSON.stringify(res, null, 2))

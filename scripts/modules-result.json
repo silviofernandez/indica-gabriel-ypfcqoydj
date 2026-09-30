@@ -1,0 +1,8 @@
+{
+  "canvas": false,
+  "sharp": false,
+  "jimp": false,
+  "zlib": true,
+  "pngjs": false,
+  "jpeg-js": false
+}
