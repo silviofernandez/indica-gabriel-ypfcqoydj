@@ -3,17 +3,20 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
 
+import type { UserRole } from '@/contexts/AuthContext'
+
 interface ProtectedRouteProps {
   children: React.ReactNode
+  allowedRoles?: UserRole[]
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { user, isLoading } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh]">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] p-8">
         <Loader2 className="w-8 h-8 text-[#1a5d8f] animate-spin" />
         <p className="mt-3 text-sm text-[#6b7280]">Carregando sessão...</p>
       </div>
@@ -21,8 +24,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!user) {
-    // Redireciona para /auth mantendo a rota pretendida
     return <Navigate to="/auth" state={{ from: location }} replace />
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Redireciona de forma inteligente caso o papel não tenha permissão nesta rota
+    const target = user.role === 'indicador' ? '/indicador' : '/admin'
+    return <Navigate to={target} replace />
   }
 
   return <>{children}</>

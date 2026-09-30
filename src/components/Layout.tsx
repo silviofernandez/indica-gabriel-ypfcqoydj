@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Home, Menu, X, LogOut, User, CheckCircle2, ArrowRight } from 'lucide-react'
+import {
+  Home,
+  Menu,
+  X,
+  LogOut,
+  User,
+  CheckCircle2,
+  PlusCircle,
+  LayoutDashboard,
+  ShieldCheck,
+  Users2,
+  Settings,
+  Sparkles,
+  ChevronRight,
+} from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,16 +35,22 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Detecta scroll para aplicar efeito de blur e fundo semi-transparente
+  // Detecta se estamos numa rota interna do sistema
+  const isInternalApp =
+    location.pathname.startsWith('/indicador') ||
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/dashboard')
+
+  // Detecta scroll para aplicar blur
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      setIsScrolled(window.scrollY > 15)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Fecha o menu mobile ao navegar
+  // Fecha o menu mobile ao trocar de rota
   useEffect(() => {
     setMobileMenuOpen(false)
   }, [location.pathname])
@@ -41,13 +62,69 @@ export default function Layout() {
 
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'U'
 
+  // Itens de navegação condicional por profiles.role
+  const isIndicador = user?.role === 'indicador'
+  const isStaff = user?.role === 'master' || user?.role === 'operator' || user?.role === 'manager'
+  const isMaster = user?.role === 'master'
+
+  // Links do menu interno do Indicador
+  const indicadorNavItems = [
+    {
+      title: 'Início',
+      to: '/indicador',
+      icon: Home,
+      exact: true,
+    },
+    {
+      title: 'Nova Indicação',
+      to: '/indicador/nova-indicacao',
+      icon: PlusCircle,
+      exact: false,
+    },
+  ]
+
+  // Links do menu interno do Admin (master, operator, manager)
+  const adminNavItems = [
+    {
+      title: 'Painel Admin',
+      to: '/admin',
+      icon: LayoutDashboard,
+      exact: true,
+      visible: isStaff,
+    },
+    {
+      title: 'Equipas',
+      to: '/admin/equipas',
+      icon: Users2,
+      exact: false,
+      visible: isMaster,
+    },
+    {
+      title: 'Configurações',
+      to: '/admin/configuracoes',
+      icon: Settings,
+      exact: false,
+      visible: isMaster,
+    },
+  ].filter((item) => item.visible)
+
+  // Se o usuário autenticado for master, também pode alternar para a visão de indicador
+  const roleDisplayNames: Record<string, string> = {
+    indicador: 'Indicador Parceiro',
+    master: 'Master Admin',
+    operator: 'Operador Comercial',
+    manager: 'Gerente Comercial',
+  }
+
+  const currentRoleLabel = user?.role ? roleDisplayNames[user.role] || user.role : ''
+
   return (
     <div className="flex flex-col min-h-screen bg-[#faf7f2] text-[#1f2933] font-sans antialiased selection:bg-[#1a5d8f] selection:text-white">
-      {/* Header Fixo com Blur */}
+      {/* HEADER FIXO SUPERIOR */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
-          isScrolled
-            ? 'bg-white/85 backdrop-blur-md shadow-sm border-b border-[#e5e0d8]'
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-200 ${
+          isScrolled || isInternalApp
+            ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-[#e5e0d8]'
             : 'bg-transparent'
         }`}
       >
@@ -55,7 +132,7 @@ export default function Layout() {
           <div className="flex items-center justify-between h-20">
             {/* Logo Marca */}
             <Link
-              to="/"
+              to={user ? (isStaff ? '/admin' : '/indicador') : '/'}
               className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#1a5d8f] rounded-lg p-1"
             >
               <div className="w-10 h-10 rounded-xl bg-[#1a5d8f] flex items-center justify-center text-white shadow-md shadow-[#1a5d8f]/20 group-hover:bg-[#144a72] transition-colors">
@@ -71,28 +148,102 @@ export default function Layout() {
               </div>
             </Link>
 
-            {/* Navegação Desktop */}
+            {/* Navegação Desktop Central */}
             <nav className="hidden md:flex items-center gap-6">
-              <Link
-                to="/"
-                className="text-sm font-semibold text-[#1f2933] hover:text-[#1a5d8f] transition-colors"
-              >
-                Início
-              </Link>
-              <a
-                href="/#como-funciona"
-                className="text-sm font-semibold text-[#6b7280] hover:text-[#1a5d8f] transition-colors"
-              >
-                Como Funciona
-              </a>
-              {user && (
-                <Link
-                  to="/dashboard"
-                  className="text-sm font-semibold text-[#1a5d8f] hover:text-[#144a72] transition-colors flex items-center gap-1.5"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Painel de Indicações
-                </Link>
+              {!user ? (
+                <>
+                  <Link
+                    to="/"
+                    className={`text-sm font-semibold transition-colors ${
+                      location.pathname === '/'
+                        ? 'text-[#1a5d8f]'
+                        : 'text-[#1f2933] hover:text-[#1a5d8f]'
+                    }`}
+                  >
+                    Início
+                  </Link>
+                  <a
+                    href="/#como-funciona"
+                    className="text-sm font-semibold text-[#6b7280] hover:text-[#1a5d8f] transition-colors"
+                  >
+                    Como Funciona
+                  </a>
+                </>
+              ) : (
+                /* Itens contextuais no Header desktop quando logado */
+                <div className="flex items-center gap-1 bg-[#faf7f2] p-1 rounded-xl border border-[#e5e0d8]">
+                  {isIndicador && (
+                    <>
+                      <Link
+                        to="/indicador"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                          location.pathname === '/indicador'
+                            ? 'bg-[#1a5d8f] text-white shadow-sm'
+                            : 'text-gray-700 hover:text-[#1a5d8f]'
+                        }`}
+                      >
+                        Início
+                      </Link>
+                      <Link
+                        to="/indicador/nova-indicacao"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${
+                          location.pathname === '/indicador/nova-indicacao'
+                            ? 'bg-[#1a5d8f] text-white shadow-sm'
+                            : 'text-gray-700 hover:text-[#1a5d8f]'
+                        }`}
+                      >
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        Nova Indicação
+                      </Link>
+                    </>
+                  )}
+
+                  {isStaff && (
+                    <>
+                      <Link
+                        to="/admin"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                          location.pathname === '/admin'
+                            ? 'bg-[#1a5d8f] text-white shadow-sm'
+                            : 'text-gray-700 hover:text-[#1a5d8f]'
+                        }`}
+                      >
+                        Painel Admin
+                      </Link>
+                      {isMaster && (
+                        <>
+                          <Link
+                            to="/admin/equipas"
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                              location.pathname === '/admin/equipas'
+                                ? 'bg-[#1a5d8f] text-white shadow-sm'
+                                : 'text-gray-700 hover:text-[#1a5d8f]'
+                            }`}
+                          >
+                            Equipas
+                          </Link>
+                          <Link
+                            to="/admin/configuracoes"
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                              location.pathname === '/admin/configuracoes'
+                                ? 'bg-[#1a5d8f] text-white shadow-sm'
+                                : 'text-gray-700 hover:text-[#1a5d8f]'
+                            }`}
+                          >
+                            Configurações
+                          </Link>
+                          <Link
+                            to="/indicador"
+                            className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-[#1a5d8f] border-l border-[#e5e0d8] ml-1"
+                            title="Alternar para visão de indicador"
+                          >
+                            Visão Indicador
+                          </Link>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
               )}
             </nav>
 
@@ -100,6 +251,13 @@ export default function Layout() {
             <div className="hidden md:flex items-center gap-3">
               {user ? (
                 <div className="flex items-center gap-3">
+                  <Badge
+                    variant="outline"
+                    className="border-[#1a5d8f]/30 bg-[#1a5d8f]/5 text-[#1a5d8f] text-xs font-semibold py-1"
+                  >
+                    {currentRoleLabel}
+                  </Badge>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="flex items-center gap-2.5 p-1.5 rounded-full hover:bg-black/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#1a5d8f]">
@@ -115,26 +273,82 @@ export default function Layout() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
-                      className="w-56 bg-white border-[#e5e0d8] shadow-lg rounded-xl"
+                      className="w-64 bg-white border-[#e5e0d8] shadow-lg rounded-xl p-1"
                     >
                       <DropdownMenuLabel className="font-normal p-3">
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-semibold text-[#0f2a43]">{user.name}</p>
                           <p className="text-xs text-[#6b7280] truncate">{user.email}</p>
+                          <div className="pt-1">
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#1a5d8f]/10 text-[#1a5d8f]">
+                              {user.role}
+                            </span>
+                          </div>
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator className="bg-[#e5e0d8]" />
+
+                      {isIndicador && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/indicador')}
+                            className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                          >
+                            <Home className="mr-2 h-4 w-4 text-[#1a5d8f]" />
+                            Minhas Indicações
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/indicador/nova-indicacao')}
+                            className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                          >
+                            <PlusCircle className="mr-2 h-4 w-4 text-[#1a5d8f]" />
+                            Nova Indicação
+                          </DropdownMenuItem>
+                        </>
+                      )}
+
+                      {isStaff && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/admin')}
+                            className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                          >
+                            <LayoutDashboard className="mr-2 h-4 w-4 text-[#1a5d8f]" />
+                            Painel Admin
+                          </DropdownMenuItem>
+                          {isMaster && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => navigate('/admin/equipas')}
+                                className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                              >
+                                <Users2 className="mr-2 h-4 w-4 text-[#1a5d8f]" />
+                                Gestão de Equipas
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => navigate('/admin/configuracoes')}
+                                className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                              >
+                                <Settings className="mr-2 h-4 w-4 text-[#1a5d8f]" />
+                                Configurações de Bônus
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </>
+                      )}
+
                       <DropdownMenuItem
                         onClick={() => navigate('/dashboard')}
-                        className="cursor-pointer py-2.5 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                        className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
                       >
-                        <User className="mr-2 h-4 w-4 text-[#1a5d8f]" />
-                        Minha Conta / Painel
+                        <User className="mr-2 h-4 w-4 text-gray-500" />
+                        Status da Conexão / Perfil
                       </DropdownMenuItem>
+
                       <DropdownMenuSeparator className="bg-[#e5e0d8]" />
                       <DropdownMenuItem
                         onClick={handleLogout}
-                        className="cursor-pointer py-2.5 text-sm font-medium text-red-600 focus:bg-red-50 focus:text-red-700"
+                        className="cursor-pointer py-2 text-sm font-medium text-red-600 focus:bg-red-50 focus:text-red-700"
                       >
                         <LogOut className="mr-2 h-4 w-4" />
                         Sair da Conta
@@ -175,110 +389,217 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Drawer Mobile Lateral */}
+        {/* DRAWER MOBILE-FIRST RESPONSIVO */}
         <div
-          className={`fixed inset-0 z-40 md:hidden transition-opacity duration-300 ${
+          className={`fixed inset-0 z-50 md:hidden transition-opacity duration-300 ${
             mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
           }`}
         >
           {/* Backdrop Escuro */}
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
 
-          {/* Painel Deslizante */}
+          {/* Painel Deslizante Mobile */}
           <div
             className={`fixed top-0 right-0 bottom-0 w-4/5 max-w-sm bg-white shadow-2xl p-6 flex flex-col justify-between transform transition-transform duration-300 ease-in-out ${
               mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
-            <div>
-              <div className="flex items-center justify-between pb-6 border-b border-[#e5e0d8]">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-[#1a5d8f] flex items-center justify-center text-white">
-                    <Home className="w-4 h-4" />
+            <div className="overflow-y-auto">
+              {/* Header do Drawer */}
+              <div className="flex items-center justify-between pb-5 border-b border-[#e5e0d8]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#1a5d8f] flex items-center justify-center text-white shadow-sm">
+                    <Home className="w-5 h-5" />
                   </div>
-                  <span className="font-bold text-lg text-[#0f2a43]">Indica Gabriel</span>
+                  <div>
+                    <span className="font-bold text-base text-[#0f2a43] block leading-tight">
+                      Indica Gabriel
+                    </span>
+                    <span className="text-[11px] text-[#d9995b] font-medium">
+                      Imobiliária Gabriel
+                    </span>
+                  </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg text-gray-500 hover:text-gray-800"
+                  className="p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Status do Backend */}
-              <div className="mt-4 p-3 bg-[#faf7f2] border border-[#e5e0d8] rounded-lg flex items-center gap-2 text-xs">
-                <span
-                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                    supabaseStatus.connected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
-                  }`}
-                />
-                <span className="text-gray-700 font-medium truncate">
-                  {supabaseStatus.connected
-                    ? 'Conexão com Backend Ativa'
-                    : supabaseStatus.message || 'Verificando Backend...'}
-                </span>
-              </div>
+              {/* Status do Backend & Papel do Usuário */}
+              {user && (
+                <div className="mt-4 p-3 bg-[#faf7f2] border border-[#e5e0d8] rounded-xl space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Perfil Conectado:</span>
+                    <span className="text-xs font-bold text-[#1a5d8f] uppercase">{user.role}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-gray-600">
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        supabaseStatus.connected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                      }`}
+                    />
+                    <span className="truncate">
+                      {supabaseStatus.connected ? 'Backend Conectado' : 'Modo Seguro'}
+                    </span>
+                  </div>
+                </div>
+              )}
 
-              {/* Links Mobile */}
-              <nav className="mt-6 flex flex-col gap-2">
-                <Link
-                  to="/"
-                  className="flex items-center justify-between p-3 rounded-lg text-[#1f2933] hover:bg-[#faf7f2] font-semibold text-base"
-                >
-                  Início
-                  <ArrowRight className="w-4 h-4 text-gray-400" />
-                </Link>
-                <a
-                  href="/#como-funciona"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between p-3 rounded-lg text-[#6b7280] hover:bg-[#faf7f2] font-semibold text-base"
-                >
-                  Como Funciona
-                  <ArrowRight className="w-4 h-4 text-gray-400" />
-                </a>
-                {user && (
-                  <Link
-                    to="/dashboard"
-                    className="flex items-center justify-between p-3 rounded-lg text-[#1a5d8f] bg-[#1a5d8f]/5 font-semibold text-base"
-                  >
-                    Painel de Indicações
-                    <ArrowRight className="w-4 h-4 text-[#1a5d8f]" />
-                  </Link>
+              {/* NAVEGAÇÃO CONDICIONAL MOBILE */}
+              <nav className="mt-6 flex flex-col gap-1.5">
+                {/* 1. SE LOGADO COMO INDICADOR */}
+                {user && isIndicador && (
+                  <>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-3 pb-1">
+                      Menu do Indicador
+                    </div>
+                    {indicadorNavItems.map((item) => {
+                      const Icon = item.icon
+                      const isActive = item.exact
+                        ? location.pathname === item.to
+                        : location.pathname.startsWith(item.to)
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`flex items-center justify-between p-3 rounded-xl font-semibold text-sm transition-colors ${
+                            isActive
+                              ? 'bg-[#1a5d8f] text-white shadow-sm'
+                              : 'text-[#1f2933] hover:bg-[#faf7f2]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon
+                              className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#1a5d8f]'}`}
+                            />
+                            <span>{item.title}</span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 opacity-50" />
+                        </Link>
+                      )
+                    })}
+                  </>
+                )}
+
+                {/* 2. SE LOGADO COMO MASTER / OPERATOR / MANAGER */}
+                {user && isStaff && (
+                  <>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-3 pb-1">
+                      Administração
+                    </div>
+                    {adminNavItems.map((item) => {
+                      const Icon = item.icon
+                      const isActive = item.exact
+                        ? location.pathname === item.to
+                        : location.pathname.startsWith(item.to)
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`flex items-center justify-between p-3 rounded-xl font-semibold text-sm transition-colors ${
+                            isActive
+                              ? 'bg-[#1a5d8f] text-white shadow-sm'
+                              : 'text-[#1f2933] hover:bg-[#faf7f2]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon
+                              className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#1a5d8f]'}`}
+                            />
+                            <span>{item.title}</span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 opacity-50" />
+                        </Link>
+                      )
+                    })}
+
+                    {/* Atalho para visão de indicador no mobile para master */}
+                    {isMaster && (
+                      <Link
+                        to="/indicador"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center justify-between p-3 rounded-xl font-medium text-xs text-gray-500 hover:bg-[#faf7f2] mt-2 border-t border-[#e5e0d8]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Home className="w-3.5 h-3.5" />
+                          <span>Alternar: Visão Indicador</span>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
+                  </>
+                )}
+
+                {/* 3. SE NÃO ESTIVER LOGADO */}
+                {!user && (
+                  <>
+                    <Link
+                      to="/"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center justify-between p-3 rounded-xl font-semibold text-sm transition-colors ${
+                        location.pathname === '/'
+                          ? 'bg-[#1a5d8f] text-white'
+                          : 'text-[#1f2933] hover:bg-[#faf7f2]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Home className="w-4 h-4" />
+                        <span>Início</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-50" />
+                    </Link>
+
+                    <a
+                      href="/#como-funciona"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-between p-3 rounded-xl font-semibold text-sm text-[#6b7280] hover:bg-[#faf7f2]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Sparkles className="w-4 h-4 text-[#d9995b]" />
+                        <span>Como Funciona</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-50" />
+                    </a>
+                  </>
                 )}
               </nav>
             </div>
 
-            {/* Rodapé do Menu Mobile */}
-            <div className="pt-6 border-t border-[#e5e0d8] flex flex-col gap-3">
+            {/* Rodapé do Drawer Mobile */}
+            <div className="pt-5 border-t border-[#e5e0d8] flex flex-col gap-3">
               {user ? (
                 <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-3 p-2">
+                  <div className="flex items-center gap-3 p-2 bg-[#faf7f2] rounded-xl border border-[#e5e0d8]">
                     <Avatar className="h-10 w-10 border-2 border-[#1a5d8f]">
                       <AvatarFallback className="bg-[#1a5d8f] text-white font-bold">
                         {userInitial}
                       </AvatarFallback>
                     </Avatar>
                     <div className="truncate">
-                      <p className="font-semibold text-sm text-[#0f2a43]">{user.name}</p>
+                      <p className="font-semibold text-sm text-[#0f2a43] truncate">{user.name}</p>
                       <p className="text-xs text-[#6b7280] truncate">{user.email}</p>
                     </div>
                   </div>
                   <Button
                     variant="outline"
                     onClick={handleLogout}
-                    className="w-full border-red-200 text-red-600 hover:bg-red-50 font-semibold"
+                    className="w-full border-red-200 text-red-600 hover:bg-red-50 font-semibold h-11"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Sair
+                    Sair da Conta
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2.5">
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -294,7 +615,7 @@ export default function Layout() {
                       setMobileMenuOpen(false)
                       navigate('/auth?mode=signup')
                     }}
-                    className="w-full bg-[#1a5d8f] hover:bg-[#144a72] text-white font-semibold h-11"
+                    className="w-full bg-[#1a5d8f] hover:bg-[#144a72] text-white font-semibold h-11 shadow-sm"
                   >
                     Criar Conta
                   </Button>
@@ -305,13 +626,130 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* Conteúdo Principal com compensação do Header */}
-      <main className="flex-1 pt-20 flex flex-col">
-        <Outlet />
-      </main>
+      {/* ÁREA CENTRAL DE CONTEÚDO (Com Sidebar no Desktop para Rotas Internas) */}
+      <div className="flex-1 pt-20 flex">
+        {user && isInternalApp ? (
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 md:py-8 flex gap-8">
+            {/* SIDEBAR DESKTOP */}
+            <aside className="hidden lg:block w-64 shrink-0">
+              <div className="sticky top-28 bg-white rounded-2xl border border-[#e5e0d8] shadow-sm p-4 space-y-6">
+                {/* Cabeçalho do Perfil na Sidebar */}
+                <div className="flex items-center gap-3 pb-4 border-b border-[#e5e0d8]">
+                  <Avatar className="h-11 w-11 border-2 border-[#1a5d8f]">
+                    <AvatarFallback className="bg-[#1a5d8f] text-white font-bold text-base">
+                      {userInitial}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="truncate">
+                    <p className="font-bold text-sm text-[#0f2a43] truncate">{user.name}</p>
+                    <span className="inline-block text-[11px] font-semibold text-[#1a5d8f] bg-[#1a5d8f]/10 px-2 py-0.5 rounded-md mt-0.5">
+                      {currentRoleLabel}
+                    </span>
+                  </div>
+                </div>
 
-      {/* Rodapé Oficial da Imobiliária Gabriel */}
-      <footer className="bg-[#0f2a43] text-white pt-16 pb-12 border-t border-[#1a5d8f]/30">
+                {/* Itens do Indicador */}
+                {isIndicador && (
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-3 block mb-2">
+                      Menu do Indicador
+                    </span>
+                    {indicadorNavItems.map((item) => {
+                      const Icon = item.icon
+                      const isActive = item.exact
+                        ? location.pathname === item.to
+                        : location.pathname.startsWith(item.to)
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                            isActive
+                              ? 'bg-[#1a5d8f] text-white shadow-sm'
+                              : 'text-gray-700 hover:bg-[#faf7f2] hover:text-[#1a5d8f]'
+                          }`}
+                        >
+                          <Icon
+                            className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#1a5d8f]'}`}
+                          />
+                          {item.title}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Itens do Admin (master, operator, manager) */}
+                {isStaff && (
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 px-3 block mb-2">
+                      Menu Administrativo
+                    </span>
+                    {adminNavItems.map((item) => {
+                      const Icon = item.icon
+                      const isActive = item.exact
+                        ? location.pathname === item.to
+                        : location.pathname.startsWith(item.to)
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                            isActive
+                              ? 'bg-[#1a5d8f] text-white shadow-sm'
+                              : 'text-gray-700 hover:bg-[#faf7f2] hover:text-[#1a5d8f]'
+                          }`}
+                        >
+                          <Icon
+                            className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#1a5d8f]'}`}
+                          />
+                          {item.title}
+                        </Link>
+                      )
+                    })}
+
+                    {isMaster && (
+                      <div className="pt-3 border-t border-[#e5e0d8] mt-3">
+                        <Link
+                          to="/indicador"
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-500 hover:bg-[#faf7f2] hover:text-[#1a5d8f]"
+                        >
+                          <Home className="w-3.5 h-3.5" />
+                          Acessar Visão Indicador
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Banner de Suporte Imobiliária Gabriel */}
+                <div className="p-3.5 rounded-xl bg-[#faf7f2] border border-[#e5e0d8] space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#0f2a43]">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Imobiliária Gabriel</span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 leading-relaxed">
+                    Dúvidas sobre bonificação ou repasse? Fale com seu gerente de equipe.
+                  </p>
+                </div>
+              </div>
+            </aside>
+
+            {/* CONTEÚDO PRINCIPAL INTERNO */}
+            <main className="flex-1 min-w-0">
+              <Outlet />
+            </main>
+          </div>
+        ) : (
+          /* CONTEÚDO PÚBLICO OU FORA DO PAINEL */
+          <main className="flex-1 flex flex-col">
+            <Outlet />
+          </main>
+        )}
+      </div>
+
+      {/* RODAPÉ OFICIAL DA IMOBILIÁRIA GABRIEL */}
+      <footer className="bg-[#0f2a43] text-white pt-16 pb-12 border-t border-[#1a5d8f]/30 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pb-12 border-b border-white/10">
             {/* Coluna 1: Marca */}
@@ -351,16 +789,43 @@ export default function Layout() {
                     Como Funciona a Indicação
                   </a>
                 </li>
-                <li>
-                  <Link to="/auth?mode=signup" className="hover:text-[#d9995b] transition-colors">
-                    Criar Minha Conta
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/auth?mode=login" className="hover:text-[#d9995b] transition-colors">
-                    Acessar Plataforma
-                  </Link>
-                </li>
+                {user ? (
+                  <>
+                    {isIndicador && (
+                      <li>
+                        <Link to="/indicador" className="hover:text-[#d9995b] transition-colors">
+                          Portal do Indicador
+                        </Link>
+                      </li>
+                    )}
+                    {isStaff && (
+                      <li>
+                        <Link to="/admin" className="hover:text-[#d9995b] transition-colors">
+                          Painel Administrativo
+                        </Link>
+                      </li>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <li>
+                      <Link
+                        to="/auth?mode=signup"
+                        className="hover:text-[#d9995b] transition-colors"
+                      >
+                        Criar Minha Conta
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/auth?mode=login"
+                        className="hover:text-[#d9995b] transition-colors"
+                      >
+                        Acessar Plataforma
+                      </Link>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
 

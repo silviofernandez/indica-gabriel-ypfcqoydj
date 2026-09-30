@@ -7,13 +7,22 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 
-// Páginas reais da aplicação
+// Páginas públicas e auth
 import Index from './pages/Index'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import NotFound from './pages/NotFound'
+
+// Páginas do Indicador
+import IndicadorDashboard from './pages/indicador/IndicadorDashboard'
+import NovaIndicacao from './pages/indicador/NovaIndicacao'
+
+// Páginas do Painel Administrativo
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminEquipas from './pages/admin/AdminEquipas'
+import AdminConfiguracoes from './pages/admin/AdminConfiguracoes'
 
 const App = () => (
   <BrowserRouter>
@@ -31,12 +40,56 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Rota Protegida do Dashboard / Painel */}
+            {/* Rota Protegida Legada Dashboard (mantida com fallback) */}
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Rotas do Indicador */}
+            <Route
+              path="/indicador"
+              element={
+                <ProtectedRoute allowedRoles={['indicador', 'master']}>
+                  <IndicadorDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/indicador/nova-indicacao"
+              element={
+                <ProtectedRoute allowedRoles={['indicador', 'master']}>
+                  <NovaIndicacao />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Rotas do Painel Administrativo (master, operator, manager) */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['master', 'operator', 'manager']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/equipas"
+              element={
+                <ProtectedRoute allowedRoles={['master']}>
+                  <AdminEquipas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/configuracoes"
+              element={
+                <ProtectedRoute allowedRoles={['master']}>
+                  <AdminConfiguracoes />
                 </ProtectedRoute>
               }
             />

@@ -2,12 +2,17 @@ import React, { createContext, useContext, useEffect, useState, useMemo } from '
 import pb from '@/lib/pocketbase/client'
 import { supabase, getSupabaseConfig, type SupabaseConnectionStatus } from '@/lib/supabase'
 
+export type UserRole = 'indicador' | 'master' | 'operator' | 'manager'
+
 export interface UserProfile {
   id: string
   email: string
   name: string
+  role: UserRole
   avatarUrl?: string
   created?: string
+  team_id?: string
+  profileId?: string
 }
 
 interface AuthContextType {
@@ -90,26 +95,85 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return status
   }
 
+  // Busca ou cria profile para o usuário autenticado
+  const fetchUserProfile = async (
+    userId: string,
+    email: string,
+    name: string,
+    created?: string,
+  ): Promise<UserProfile> => {
+    let role: UserRole = email.toLowerCase() === 'gabsilvio@gmail.com' ? 'master' : 'indicador'
+    let teamId: string | undefined
+    let profileId: string | undefined
+
+    try {
+      const profile = await pb
+        .collection('profiles')
+        .getFirstListItem(`user_id="${userId}"`)
+        .catch(() => null)
+
+      if (profile) {
+        role = (profile.role as UserRole) || role
+        teamId = profile.team_id || undefined
+        profileId = profile.id
+      } else {
+        // Cria profile padrão gracioso se ainda não existir
+        try {
+          const newProfile = await pb.collection('profiles').create({
+            user_id: userId,
+            name: name,
+            email: email,
+            role: role,
+          })
+          profileId = newProfile.id
+        } catch (createErr) {
+          console.warn('Não foi possível persistir profile no PB:', createErr)
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao consultar profile:', err)
+    }
+
+    return {
+      id: userId,
+      email,
+      name,
+      role,
+      team_id: teamId,
+      profileId,
+      created,
+    }
+  }
+
   // Inicializa sessão do usuário
   useEffect(() => {
-    const initAuth = () => {
+    let isMounted = true
+
+    const initAuth = async () => {
       try {
         // 1. Checa se há sessão PocketBase autenticada (síncrono pelo authStore em memória)
         if (pb.authStore.isValid && pb.authStore.record) {
           const rec = pb.authStore.record
-          setUser({
-            id: rec.id,
-            email: rec.email || '',
-            name: (rec.name as string) || (rec.email ? rec.email.split('@')[0] : 'Usuário'),
-            created: rec.created,
-          })
+          const email = rec.email || ''
+          const name = (rec.name as string) || (rec.email ? rec.email.split('@')[0] : 'Usuário')
+
+          // Carrega profile assincronamente com fallback imediato
+          const fullUser = await fetchUserProfile(rec.id, email, name, rec.created)
+          if (isMounted) {
+            setUser(fullUser)
+            localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(fullUser))
+          }
         } else {
           // 2. Checa se há sessão em cache local (modo dev / simulação)
           const cached = localStorage.getItem(LOCAL_STORAGE_USER_KEY)
           if (cached) {
             try {
               const parsed = JSON.parse(cached)
-              setUser(parsed)
+              if (!parsed.role) {
+                parsed.role =
+                  parsed.email?.toLowerCase() === 'gabsilvio@gmail.com' ? 'master' : 'indicador'
+              }
+              if (isMounted) setUser(parsed)
             } catch {
               localStorage.removeItem(LOCAL_STORAGE_USER_KEY)
             }
@@ -118,33 +182,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err) {
         console.warn('Erro ao restaurar sessão de autenticação:', err)
       } finally {
-        // Libera a renderização imediatamente para nunca bloquear a página inicial ou rotas
-        setIsLoading(false)
-        // Dispara verificação de backend em segundo plano
-        void checkSupabaseConnection()
+        if (isMounted) {
+          setIsLoading(false)
+          void checkSupabaseConnection()
+        }
       }
     }
 
-    initAuth()
+    void initAuth()
 
     // Inscreve-se nas mudanças do authStore do PocketBase
-    const unsubscribe = pb.authStore.onChange((_token, model) => {
+    const unsubscribe = pb.authStore.onChange(async (_token, model) => {
       if (model) {
-        setUser({
-          id: model.id,
-          email: model.email || '',
-          name: (model.name as string) || (model.email ? model.email.split('@')[0] : 'Usuário'),
-          created: model.created,
-        })
+        const email = model.email || ''
+        const name = (model.name as string) || (model.email ? model.email.split('@')[0] : 'Usuário')
+        const fullUser = await fetchUserProfile(model.id, email, name, model.created)
+        if (isMounted) {
+          setUser(fullUser)
+          localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(fullUser))
+        }
       } else {
         const cached = localStorage.getItem(LOCAL_STORAGE_USER_KEY)
-        if (!cached) {
+        if (!cached && isMounted) {
           setUser(null)
         }
       }
     })
 
     return () => {
+      isMounted = false
       unsubscribe()
     }
   }, [])
@@ -158,27 +224,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const authData = await pb.collection('users').authWithPassword(email, password)
         if (authData.record) {
-          const newUser: UserProfile = {
-            id: authData.record.id,
-            email: authData.record.email,
-            name: (authData.record.name as string) || email.split('@')[0],
-            created: authData.record.created,
-          }
-          setUser(newUser)
-          localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(newUser))
+          const recName = (authData.record.name as string) || email.split('@')[0]
+          const fullUser = await fetchUserProfile(
+            authData.record.id,
+            authData.record.email,
+            recName,
+            authData.record.created,
+          )
+          setUser(fullUser)
+          localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(fullUser))
           return { success: true }
         }
       } catch (pbErr: unknown) {
-        // Se der erro no PB (ex.: credenciais locais de teste ou usuário mock inicial)
         const errMsg = pbErr instanceof Error ? pbErr.message : String(pbErr)
         console.warn('Tentativa via API PB:', errMsg)
 
-        // Se o usuário digitou o login de seed padrão "gabsilvio@gmail.com" ou outro usuário local:
+        // Se o usuário digitou o login de seed padrão "gabsilvio@gmail.com":
         if (email.toLowerCase() === 'gabsilvio@gmail.com') {
           const demoUser: UserProfile = {
             id: 'gabriel-silvio-001',
             email: 'gabsilvio@gmail.com',
             name: 'Gabriel Silvio',
+            role: 'master',
             created: new Date().toISOString(),
           }
           setUser(demoUser)
@@ -214,14 +281,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })
         // Realiza o login após o cadastro
         const authData = await pb.collection('users').authWithPassword(email, password)
-        const newUser: UserProfile = {
-          id: authData.record.id,
-          email: authData.record.email,
-          name: (authData.record.name as string) || name,
-          created: authData.record.created,
-        }
-        setUser(newUser)
-        localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(newUser))
+        const recName = (authData.record.name as string) || name
+        const fullUser = await fetchUserProfile(
+          authData.record.id,
+          authData.record.email,
+          recName,
+          authData.record.created,
+        )
+        setUser(fullUser)
+        localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(fullUser))
         return { success: true }
       } catch (pbErr: unknown) {
         console.warn('Criação no backend:', pbErr)
@@ -230,6 +298,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: 'usr_' + Math.random().toString(36).substring(2, 9),
           email,
           name,
+          role: email.toLowerCase() === 'gabsilvio@gmail.com' ? 'master' : 'indicador',
           created: new Date().toISOString(),
         }
         setUser(localUser)

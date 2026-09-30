@@ -16,10 +16,11 @@ export default function Auth() {
   const { user, login, signup } = useAuth()
   const navigate = useNavigate()
 
-  // Se já autenticado, vai para o dashboard
+  // Se já autenticado, vai para a rota adequada de acordo com o papel
   useEffect(() => {
     if (user) {
-      navigate('/dashboard', { replace: true })
+      const destination = user.role === 'indicador' ? '/indicador' : '/admin'
+      navigate(destination, { replace: true })
     }
   }, [user, navigate])
 
@@ -70,9 +71,7 @@ export default function Auth() {
     setLoading(true)
     try {
       const res = await login(loginEmail, loginPassword)
-      if (res.success) {
-        navigate('/dashboard')
-      } else {
+      if (!res.success) {
         setErrorMessage(res.error || 'Credenciais inválidas. Verifique seu e-mail e senha.')
       }
     } catch {
@@ -112,9 +111,7 @@ export default function Auth() {
     setLoading(true)
     try {
       const res = await signup(signupName, signupEmail, signupPassword)
-      if (res.success) {
-        navigate('/dashboard')
-      } else {
+      if (!res.success) {
         setErrorMessage(res.error || 'Não foi possível criar sua conta. Tente outro e-mail.')
       }
     } catch {
