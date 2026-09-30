@@ -188,9 +188,9 @@ export default function Login() {
 
             <div className="text-center pt-3 border-t border-[#e5e0d8] mt-4">
               <p className="text-xs text-gray-600">
-                Ainda não tem conta de indicador?{' '}
-                <Link to="/auth?mode=signup" className="font-bold text-[#1a5d8f] hover:underline">
-                  Criar conta
+                Quer ser um indicador parceiro?{' '}
+                <Link to="/cadastro" className="font-bold text-[#1a5d8f] hover:underline">
+                  Cadastre-se aqui
                 </Link>
               </p>
             </div>

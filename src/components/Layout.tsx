@@ -10,6 +10,7 @@ import {
   PlusCircle,
   LayoutDashboard,
   ShieldCheck,
+  Users,
   Users2,
   Settings,
   Sparkles,
@@ -94,6 +95,13 @@ export default function Layout() {
       visible: isStaff,
     },
     {
+      title: 'Indicadores',
+      to: '/admin/indicadores',
+      icon: Users,
+      exact: false,
+      visible: isMaster || user?.role === 'operator',
+    },
+    {
       title: 'Equipas',
       to: '/admin/equipas',
       icon: Users2,
@@ -169,6 +177,16 @@ export default function Layout() {
                   >
                     Como Funciona
                   </a>
+                  <Link
+                    to="/cadastro"
+                    className={`text-sm font-semibold transition-colors ${
+                      location.pathname === '/cadastro'
+                        ? 'text-[#1a5d8f]'
+                        : 'text-[#1f2933] hover:text-[#1a5d8f]'
+                    }`}
+                  >
+                    Seja um Indicador
+                  </Link>
                 </>
               ) : (
                 /* Itens contextuais no Header desktop quando logado */
@@ -211,6 +229,18 @@ export default function Layout() {
                       >
                         Painel Admin
                       </Link>
+                      {(isMaster || user?.role === 'operator') && (
+                        <Link
+                          to="/admin/indicadores"
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                            location.pathname === '/admin/indicadores'
+                              ? 'bg-[#1a5d8f] text-white shadow-sm'
+                              : 'text-gray-700 hover:text-[#1a5d8f]'
+                          }`}
+                        >
+                          Indicadores
+                        </Link>
+                      )}
                       {isMaster && (
                         <>
                           <Link
@@ -317,6 +347,13 @@ export default function Layout() {
                             <LayoutDashboard className="mr-2 h-4 w-4 text-[#1a5d8f]" />
                             Painel Admin
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/admin/indicadores')}
+                            className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                          >
+                            <User className="mr-2 h-4 w-4 text-[#1a5d8f]" />
+                            Gestão de Indicadores
+                          </DropdownMenuItem>
                           {isMaster && (
                             <>
                               <DropdownMenuItem
@@ -367,10 +404,10 @@ export default function Layout() {
                     Entrar
                   </Button>
                   <Button
-                    onClick={() => navigate('/auth?mode=signup')}
+                    onClick={() => navigate('/cadastro')}
                     className="bg-[#1a5d8f] hover:bg-[#144a72] text-white font-semibold rounded-lg px-5 h-10 shadow-sm hover:shadow transition-all duration-150 hover:scale-[1.02]"
                   >
-                    Criar Conta
+                    Quero Indicar
                   </Button>
                 </div>
               )}
@@ -570,6 +607,22 @@ export default function Layout() {
                       </div>
                       <ChevronRight className="w-4 h-4 opacity-50" />
                     </a>
+
+                    <Link
+                      to="/cadastro"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center justify-between p-3 rounded-xl font-semibold text-sm transition-colors ${
+                        location.pathname === '/cadastro'
+                          ? 'bg-[#1a5d8f] text-white'
+                          : 'text-[#1f2933] hover:bg-[#faf7f2]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <User className="w-4 h-4 text-[#1a5d8f]" />
+                        <span>Seja um Indicador</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-50" />
+                    </Link>
                   </>
                 )}
               </nav>
@@ -614,11 +667,11 @@ export default function Layout() {
                   <Button
                     onClick={() => {
                       setMobileMenuOpen(false)
-                      navigate('/auth?mode=signup')
+                      navigate('/cadastro')
                     }}
                     className="w-full bg-[#1a5d8f] hover:bg-[#144a72] text-white font-semibold h-11 shadow-sm"
                   >
-                    Criar Conta
+                    Quero Indicar
                   </Button>
                 </div>
               )}
@@ -811,10 +864,18 @@ export default function Layout() {
                   <>
                     <li>
                       <Link
+                        to="/cadastro"
+                        className="hover:text-[#d9995b] transition-colors font-semibold"
+                      >
+                        Cadastre-se como Indicador
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
                         to="/auth?mode=signup"
                         className="hover:text-[#d9995b] transition-colors"
                       >
-                        Criar Minha Conta
+                        Criar Conta Direta
                       </Link>
                     </li>
                     <li>

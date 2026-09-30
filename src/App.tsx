@@ -11,6 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Index from './pages/Index'
 import Auth from './pages/Auth'
 import Login from './pages/Login'
+import Cadastro from './pages/Cadastro'
 import TrocarSenha from './pages/TrocarSenha'
 import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
@@ -23,6 +24,7 @@ import NovaIndicacao from './pages/indicador/NovaIndicacao'
 
 // Páginas do Painel Administrativo
 import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminIndicadores from './pages/admin/AdminIndicadores'
 import AdminEquipas from './pages/admin/AdminEquipas'
 import AdminConfiguracoes from './pages/admin/AdminConfiguracoes'
 
@@ -36,6 +38,9 @@ const App = () => (
           <Route element={<Layout />}>
             {/* Rota Pública Principal */}
             <Route path="/" element={<Index />} />
+
+            {/* Rota Pública de Cadastro do Indicador */}
+            <Route path="/cadastro" element={<Cadastro />} />
 
             {/* Rotas de Autenticação e Recuperação de Senha */}
             <Route path="/login" element={<Login />} />
@@ -87,6 +92,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['master', 'operator', 'manager']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/indicadores"
+              element={
+                <ProtectedRoute allowedRoles={['master', 'operator']}>
+                  <AdminIndicadores />
                 </ProtectedRoute>
               }
             />

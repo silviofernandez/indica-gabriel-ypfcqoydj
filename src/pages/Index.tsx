@@ -48,8 +48,8 @@ export default function Index() {
                   asChild
                   className="bg-[#d9995b] hover:bg-[#c48443] text-white font-bold text-base px-8 py-6 rounded-xl shadow-lg shadow-[#d9995b]/25 transition-all duration-200 hover:scale-105 active:scale-95"
                 >
-                  <Link to="/auth?mode=signup" className="flex items-center justify-center gap-2">
-                    Começar Agora
+                  <Link to="/cadastro" className="flex items-center justify-center gap-2">
+                    Quero ser Indicador
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                 </Button>
@@ -255,8 +255,8 @@ export default function Index() {
               asChild
               className="bg-white text-[#1a5d8f] hover:bg-gray-100 font-bold text-base px-8 py-6 rounded-xl shadow-2xl transition-all duration-200 hover:scale-105 active:scale-95"
             >
-              <Link to="/auth?mode=signup" className="flex items-center gap-2">
-                Criar Conta Grátis
+              <Link to="/cadastro" className="flex items-center gap-2">
+                Cadastrar como Indicador Parceiro
                 <ArrowRight className="w-5 h-5 text-[#1a5d8f]" />
               </Link>
             </Button>
