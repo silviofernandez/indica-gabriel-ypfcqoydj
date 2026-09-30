@@ -16,6 +16,7 @@ import {
   Sparkles,
   ChevronRight,
   Filter,
+  Wallet,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -106,6 +107,20 @@ export default function Layout() {
       title: 'Indicadores',
       to: '/admin/indicadores',
       icon: Users,
+      exact: false,
+      visible: isMaster || user?.role === 'operator',
+    },
+    {
+      title: 'Vitacon',
+      to: '/admin/vitacon',
+      icon: Sparkles,
+      exact: false,
+      visible: isStaff,
+    },
+    {
+      title: 'Financeiro',
+      to: '/admin/financeiro',
+      icon: Wallet,
       exact: false,
       visible: isMaster || user?.role === 'operator',
     },
@@ -259,6 +274,28 @@ export default function Layout() {
                           Indicadores
                         </Link>
                       )}
+                      <Link
+                        to="/admin/vitacon"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                          location.pathname === '/admin/vitacon'
+                            ? 'bg-[#1a5d8f] text-white shadow-sm'
+                            : 'text-gray-700 hover:text-[#1a5d8f]'
+                        }`}
+                      >
+                        Vitacon
+                      </Link>
+                      {(isMaster || user?.role === 'operator') && (
+                        <Link
+                          to="/admin/financeiro"
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                            location.pathname === '/admin/financeiro'
+                              ? 'bg-[#1a5d8f] text-white shadow-sm'
+                              : 'text-gray-700 hover:text-[#1a5d8f]'
+                          }`}
+                        >
+                          Financeiro
+                        </Link>
+                      )}
                       {isMaster && (
                         <>
                           <Link
@@ -379,6 +416,22 @@ export default function Layout() {
                             <User className="mr-2 h-4 w-4 text-[#1a5d8f]" />
                             Gestão de Indicadores
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => navigate('/admin/vitacon')}
+                            className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                          >
+                            <Sparkles className="mr-2 h-4 w-4 text-purple-600" />
+                            Painel Vitacon SP
+                          </DropdownMenuItem>
+                          {(isMaster || user?.role === 'operator') && (
+                            <DropdownMenuItem
+                              onClick={() => navigate('/admin/financeiro')}
+                              className="cursor-pointer py-2 text-sm font-medium focus:bg-[#faf7f2] focus:text-[#1a5d8f]"
+                            >
+                              <Wallet className="mr-2 h-4 w-4 text-emerald-600" />
+                              Gestão Financeira
+                            </DropdownMenuItem>
+                          )}
                           {isMaster && (
                             <>
                               <DropdownMenuItem

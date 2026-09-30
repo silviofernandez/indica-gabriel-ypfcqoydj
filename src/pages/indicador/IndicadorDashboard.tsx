@@ -95,6 +95,7 @@ export function getStatusConfig(status?: string): StatusConfig {
         icon: CheckCircle2,
       }
     case 'paid':
+    case 'bonus_paid':
       return {
         label: 'Bonificação paga',
         description: 'O valor da sua recompensa já foi depositado via PIX.',
@@ -316,7 +317,7 @@ export default function IndicadorDashboard() {
     } else if (activeTab === 'paid') {
       list = list.filter((r) => {
         const s = (r.status || '').toLowerCase()
-        return s === 'paid'
+        return s === 'paid' || s === 'bonus_paid'
       })
     }
 

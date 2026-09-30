@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T20:46:14.216Z",
+  "generatedAt": "2026-09-30T20:55:32.874Z",
   "collections": [
     {
       "name": "users",
@@ -405,7 +405,7 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["rental", "sale", "vitacon"]
+          "selectValues": ["rental", "sale", "vitacon", "buyer"]
         },
         {
           "name": "expected_value",
@@ -428,7 +428,8 @@
             "closed_lost",
             "paid",
             "cancelled",
-            "expired"
+            "expired",
+            "bonus_paid"
           ]
         },
         {
@@ -494,6 +495,12 @@
         {
           "name": "assigned_at",
           "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deal_value",
+          "type": "number",
           "required": false,
           "system": false
         }
@@ -635,12 +642,52 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "payment_status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pending", "paid", "cancelled"]
+        },
+        {
+          "name": "is_vitacon",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "recipient_type",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["indicator", "referred"]
+        },
+        {
+          "name": "payment_notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pix_key_used",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deal_value",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_bonuses_referral ON bonuses (referral_id)",
         "CREATE INDEX idx_bonuses_indicator ON bonuses (indicator_id)",
-        "CREATE INDEX idx_bonuses_status ON bonuses (status)"
+        "CREATE INDEX idx_bonuses_status ON bonuses (status)",
+        "CREATE INDEX `idx_bonuses_payment_status` ON `bonuses` (payment_status)",
+        "CREATE INDEX `idx_bonuses_is_vitacon` ON `bonuses` (is_vitacon)"
       ]
     },
     {

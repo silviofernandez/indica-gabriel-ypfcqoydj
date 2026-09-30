@@ -215,7 +215,7 @@ export default function AdminIndicacaoDetalhe() {
   const isSlaDelayed =
     referral.sla_deadline &&
     new Date(referral.sla_deadline).getTime() < now &&
-    !['closed_won', 'closed', 'paid', 'closed_lost', 'cancelled', 'expired'].includes(
+    !['closed_won', 'closed', 'paid', 'bonus_paid', 'closed_lost', 'cancelled', 'expired'].includes(
       referral.status.toLowerCase(),
     )
 
@@ -615,7 +615,7 @@ export default function AdminIndicacaoDetalhe() {
                       <SelectItem value="visited">Visita agendada</SelectItem>
                       <SelectItem value="negotiating">Em negociação</SelectItem>
                       <SelectItem value="closed_won">Concluída com sucesso</SelectItem>
-                      <SelectItem value="paid">Bonificação paga</SelectItem>
+                      <SelectItem value="bonus_paid">Bonificação paga</SelectItem>
                       <SelectItem value="closed_lost">Cancelada (não fechou)</SelectItem>
                       <SelectItem value="expired">Expirada</SelectItem>
                     </SelectContent>

@@ -27,6 +27,8 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminIndicacoes from './pages/admin/AdminIndicacoes'
 import AdminIndicacaoDetalhe from './pages/admin/AdminIndicacaoDetalhe'
 import AdminIndicadores from './pages/admin/AdminIndicadores'
+import AdminFinanceiro from './pages/admin/AdminFinanceiro'
+import AdminVitacon from './pages/admin/AdminVitacon'
 import AdminEquipas from './pages/admin/AdminEquipas'
 import AdminConfiguracoes from './pages/admin/AdminConfiguracoes'
 
@@ -118,6 +120,22 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['master', 'operator']}>
                   <AdminIndicadores />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/vitacon"
+              element={
+                <ProtectedRoute allowedRoles={['master', 'operator', 'manager']}>
+                  <AdminVitacon />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/financeiro"
+              element={
+                <ProtectedRoute allowedRoles={['master', 'operator']}>
+                  <AdminFinanceiro />
                 </ProtectedRoute>
               }
             />

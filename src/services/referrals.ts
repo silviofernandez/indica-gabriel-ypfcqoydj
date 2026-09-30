@@ -176,10 +176,10 @@ export type ReferralStatus =
   | 'negotiating'
   | 'closed_won'
   | 'closed_lost'
-  // Compatibilidade com possíveis valores futuros ou de documentação:
+  | 'paid'
+  | 'bonus_paid'
   | 'in_progress'
   | 'closed'
-  | 'paid'
   | 'cancelled'
   | 'expired'
   | string
@@ -193,6 +193,7 @@ export interface ReferralRecord {
   property_description?: string
   property_type: 'rental' | 'sale' | 'vitacon' | 'buyer' | string
   expected_value?: number
+  deal_value?: number
   status: ReferralStatus
   assigned_to?: string
   assigned_team_id?: string
@@ -290,11 +291,27 @@ export interface BonusRecord {
   bonus_type: BonusType
   amount: number
   status: BonusStatus
+  payment_status?: 'pending' | 'paid' | 'cancelled' | string
+  is_vitacon?: boolean
+  recipient_type?: 'indicator' | 'referred' | string
+  payment_notes?: string
+  pix_key_used?: string
+  deal_value?: number
   paid_at?: string
   created: string
   updated: string
   expand?: {
     referral_id?: ReferralRecord
+    indicator_id?: {
+      id: string
+      full_name?: string
+      user_id?: string
+      phone?: string
+      email?: string
+      pix_key?: string
+      pix_key_type?: string
+      cpf_cnpj?: string
+    }
   }
 }
 
@@ -508,6 +525,7 @@ export interface UpdateReferralStatusPayload {
   referral_id: string
   status: string
   notes?: string
+  deal_value?: number
 }
 
 export interface UpdateReferralStatusResponse {
@@ -518,6 +536,12 @@ export interface UpdateReferralStatusResponse {
   new_status?: string
   notes?: string
   history_id?: string
+  created_bonuses?: Array<{
+    id: string
+    recipient: string
+    type: string
+    amount: number
+  }>
   error?: string
 }
 
@@ -534,6 +558,7 @@ export async function updateReferralStatus(
         referral_id: payload.referral_id,
         status: payload.status,
         notes: payload.notes || '',
+        deal_value: payload.deal_value,
       },
     })
     return { success: true, data: res }
@@ -545,6 +570,123 @@ export async function updateReferralStatus(
       errorObj?.message ||
       'Não foi possível atualizar o status da indicação.'
     return { success: false, error: errorMsg }
+  }
+}
+
+export interface CalculateBonusPayload {
+  referral_id: string
+  deal_value?: number
+  force_recalculate?: boolean
+}
+
+export interface CalculateBonusResponse {
+  success: boolean
+  message: string
+  referral_id?: string
+  property_type?: string
+  deal_value?: number
+  already_calculated?: boolean
+  created_bonuses?: Array<{
+    id: string
+    recipient: string
+    type: string
+    amount: number
+  }>
+  error?: string
+}
+
+/**
+ * Dispara o cálculo e geração de bônus via RPC fn_calculate_bonus
+ */
+export async function calculateBonus(
+  payload: CalculateBonusPayload,
+): Promise<{ success: boolean; data?: CalculateBonusResponse; error?: string }> {
+  try {
+    const res = await pb.send<CalculateBonusResponse>('/backend/v1/calculate-bonus', {
+      method: 'POST',
+      body: {
+        referral_id: payload.referral_id,
+        deal_value: payload.deal_value,
+        force_recalculate: payload.force_recalculate,
+      },
+    })
+    return { success: true, data: res }
+  } catch (err: unknown) {
+    const errorObj = err as { response?: { error?: string; message?: string }; message?: string }
+    const errorMsg =
+      errorObj?.response?.error ||
+      errorObj?.response?.message ||
+      errorObj?.message ||
+      'Não foi possível calcular o bônus desta indicação.'
+    return { success: false, error: errorMsg }
+  }
+}
+
+export interface RegisterBonusPaymentPayload {
+  bonus_id: string
+  pix_key_used?: string
+  payment_notes?: string
+  paid_at?: string
+}
+
+export interface RegisterBonusPaymentResponse {
+  success: boolean
+  message: string
+  bonus_id?: string
+  amount?: number
+  paid_at?: string
+  pix_key_used?: string
+  referral_id?: string
+  referral_new_status?: string
+  already_paid?: boolean
+  error?: string
+}
+
+/**
+ * Dispara o registro e quitação de pagamento do bônus (register-bonus-payment)
+ */
+export async function registerBonusPayment(
+  payload: RegisterBonusPaymentPayload,
+): Promise<{ success: boolean; data?: RegisterBonusPaymentResponse; error?: string }> {
+  try {
+    const res = await pb.send<RegisterBonusPaymentResponse>('/backend/v1/register-bonus-payment', {
+      method: 'POST',
+      body: {
+        bonus_id: payload.bonus_id,
+        pix_key_used: payload.pix_key_used,
+        payment_notes: payload.payment_notes,
+        paid_at: payload.paid_at,
+      },
+    })
+    return { success: true, data: res }
+  } catch (err: unknown) {
+    const errorObj = err as { response?: { error?: string; message?: string }; message?: string }
+    const errorMsg =
+      errorObj?.response?.error ||
+      errorObj?.response?.message ||
+      errorObj?.message ||
+      'Não foi possível registrar o pagamento do bônus.'
+    return { success: false, error: errorMsg }
+  }
+}
+
+/**
+ * Lista todos os bônus com opções de filtro e expansão (para gestão financeira e vitacon)
+ */
+export async function listAllBonuses(options?: {
+  filter?: string
+  sort?: string
+}): Promise<BonusRecord[]> {
+  try {
+    const records = await pb.collection('bonuses').getFullList<BonusRecord>({
+      filter: options?.filter,
+      sort: options?.sort || '-created',
+      expand: 'referral_id,indicator_id',
+    })
+    return records
+  } catch (err) {
+    console.warn('Erro ao listar todos os bônus:', err)
+    return []
   }
 }
 
