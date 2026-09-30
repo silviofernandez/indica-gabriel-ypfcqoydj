@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T11:20:05.018Z",
+  "generatedAt": "2026-09-30T19:46:06.895Z",
   "collections": [
     {
       "name": "users",
@@ -95,7 +95,10 @@
           "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": ["CREATE INDEX idx_teams_leader ON teams (leader_id)"]
+      "indexes": [
+        "CREATE INDEX idx_teams_leader ON teams (leader_id)",
+        "CREATE INDEX `idx_teams_active` ON `teams` (active)"
+      ]
     },
     {
       "name": "profiles",
@@ -304,7 +307,8 @@
       ],
       "indexes": [
         "CREATE INDEX idx_team_members_team ON team_members (team_id)",
-        "CREATE INDEX idx_team_members_user ON team_members (user_id)"
+        "CREATE INDEX idx_team_members_user ON team_members (user_id)",
+        "CREATE UNIQUE INDEX `uk_team_user` ON `team_members` (team_id, user_id)"
       ]
     },
     {
@@ -407,7 +411,8 @@
       "indexes": [
         "CREATE INDEX idx_referrals_indicator ON referrals (indicator_id)",
         "CREATE INDEX idx_referrals_status ON referrals (status)",
-        "CREATE INDEX idx_referrals_assigned ON referrals (assigned_to)"
+        "CREATE INDEX idx_referrals_assigned ON referrals (assigned_to)",
+        "CREATE INDEX `idx_referrals_property_type` ON `referrals` (property_type)"
       ]
     },
     {
