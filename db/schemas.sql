@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     phone TEXT,
     role user_role_enum NOT NULL DEFAULT 'indicador',
     team_id UUID REFERENCES public.teams(id) ON DELETE SET NULL,
+    must_change_password BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

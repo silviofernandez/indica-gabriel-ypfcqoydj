@@ -39,7 +39,8 @@ export default function Layout() {
   const isInternalApp =
     location.pathname.startsWith('/indicador') ||
     location.pathname.startsWith('/admin') ||
-    location.pathname.startsWith('/dashboard')
+    location.pathname.startsWith('/dashboard') ||
+    location.pathname === '/trocar-senha'
 
   // Detecta scroll para aplicar blur
   useEffect(() => {
@@ -360,7 +361,7 @@ export default function Layout() {
                 <div className="flex items-center gap-3">
                   <Button
                     variant="outline"
-                    onClick={() => navigate('/auth?mode=login')}
+                    onClick={() => navigate('/login')}
                     className="border-[#1a5d8f] text-[#1a5d8f] hover:bg-[#1a5d8f] hover:text-white font-semibold rounded-lg px-4 h-10 transition-all duration-150"
                   >
                     Entrar
@@ -604,7 +605,7 @@ export default function Layout() {
                     variant="outline"
                     onClick={() => {
                       setMobileMenuOpen(false)
-                      navigate('/auth?mode=login')
+                      navigate('/login')
                     }}
                     className="w-full border-[#1a5d8f] text-[#1a5d8f] font-semibold h-11"
                   >
@@ -628,7 +629,7 @@ export default function Layout() {
 
       {/* ÁREA CENTRAL DE CONTEÚDO (Com Sidebar no Desktop para Rotas Internas) */}
       <div className="flex-1 pt-20 flex">
-        {user && isInternalApp ? (
+        {user && isInternalApp && !user.must_change_password ? (
           <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 md:py-8 flex gap-8">
             {/* SIDEBAR DESKTOP */}
             <aside className="hidden lg:block w-64 shrink-0">
@@ -817,11 +818,8 @@ export default function Layout() {
                       </Link>
                     </li>
                     <li>
-                      <Link
-                        to="/auth?mode=login"
-                        className="hover:text-[#d9995b] transition-colors"
-                      >
-                        Acessar Plataforma
+                      <Link to="/login" className="hover:text-[#d9995b] transition-colors">
+                        Acessar Plataforma (Entrar)
                       </Link>
                     </li>
                   </>

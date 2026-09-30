@@ -24,7 +24,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   if (!user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  // Se o usuário precisa obrigatoriamente trocar de senha no primeiro acesso
+  if (user.must_change_password && location.pathname !== '/trocar-senha') {
+    return <Navigate to="/trocar-senha" replace />
+  }
+
+  // Se o usuário JÁ trocou de senha e tenta acessar /trocar-senha, redireciona para a home do seu papel
+  if (!user.must_change_password && location.pathname === '/trocar-senha') {
+    const target = user.role === 'indicador' ? '/indicador' : '/admin'
+    return <Navigate to={target} replace />
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {

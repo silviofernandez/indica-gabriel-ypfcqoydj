@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T19:56:40.321Z",
+  "generatedAt": "2026-09-30T20:06:25.616Z",
   "collections": [
     {
       "name": "users",
@@ -163,6 +163,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "must_change_password",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

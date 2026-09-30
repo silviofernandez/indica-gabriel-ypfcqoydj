@@ -75,7 +75,7 @@ export default function ForgotPassword() {
                   asChild
                   className="w-full bg-[#1a5d8f] hover:bg-[#144a72] text-white font-bold h-11 rounded-lg"
                 >
-                  <Link to="/auth?mode=login">Voltar ao Login</Link>
+                  <Link to="/login">Voltar ao Login</Link>
                 </Button>
                 <button
                   type="button"
@@ -134,7 +134,7 @@ export default function ForgotPassword() {
 
               <div className="text-center pt-3 border-t border-[#e5e0d8] mt-4">
                 <Link
-                  to="/auth?mode=login"
+                  to="/login"
                   className="inline-flex items-center text-xs font-semibold text-[#1a5d8f] hover:underline"
                 >
                   <ArrowLeft className="w-3.5 h-3.5 mr-1" />

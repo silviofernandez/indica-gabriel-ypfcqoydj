@@ -39,7 +39,7 @@ export default function ResetPassword() {
       if (res.success) {
         setSuccess(true)
         setTimeout(() => {
-          navigate('/auth?mode=login')
+          navigate('/login')
         }, 2500)
       } else {
         setErrorMessage(res.error || 'Não foi possível redefinir a senha.')
@@ -82,7 +82,7 @@ export default function ResetPassword() {
                 instantes...
               </p>
               <Button asChild className="w-full bg-[#1a5d8f] text-white font-bold h-11 rounded-lg">
-                <Link to="/auth?mode=login">Ir para o Login Agora</Link>
+                <Link to="/login">Ir para o Login Agora</Link>
               </Button>
             </div>
           ) : (

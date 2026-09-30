@@ -10,6 +10,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 // Páginas públicas e auth
 import Index from './pages/Index'
 import Auth from './pages/Auth'
+import Login from './pages/Login'
+import TrocarSenha from './pages/TrocarSenha'
 import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
@@ -36,9 +38,20 @@ const App = () => (
             <Route path="/" element={<Index />} />
 
             {/* Rotas de Autenticação e Recuperação de Senha */}
+            <Route path="/login" element={<Login />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* Rota Protegida de Troca Obrigatória de Senha */}
+            <Route
+              path="/trocar-senha"
+              element={
+                <ProtectedRoute>
+                  <TrocarSenha />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Rota Protegida Legada Dashboard (mantida com fallback) */}
             <Route

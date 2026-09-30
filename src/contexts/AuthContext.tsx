@@ -13,6 +13,7 @@ export interface UserProfile {
   created?: string
   team_id?: string
   profileId?: string
+  must_change_password?: boolean
 }
 
 interface AuthContextType {
@@ -29,6 +30,8 @@ interface AuthContextType {
   logout: () => Promise<void>
   sendPasswordResetEmail: (email: string) => Promise<{ success: boolean; error?: string }>
   resetPassword: (password: string, token?: string) => Promise<{ success: boolean; error?: string }>
+  changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>
+  refreshProfile: () => Promise<UserProfile | null>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -105,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let role: UserRole = email.toLowerCase() === 'gabsilvio@gmail.com' ? 'master' : 'indicador'
     let teamId: string | undefined
     let profileId: string | undefined
+    let mustChangePassword = false
 
     try {
       const profile = await pb
@@ -116,6 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role = (profile.role as UserRole) || role
         teamId = profile.team_id || undefined
         profileId = profile.id
+        mustChangePassword = Boolean(profile.must_change_password)
       } else {
         // Cria profile padrão gracioso se ainda não existir
         try {
@@ -124,8 +129,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name: name,
             email: email,
             role: role,
+            must_change_password: false,
           })
           profileId = newProfile.id
+          mustChangePassword = false
         } catch (createErr) {
           console.warn('Não foi possível persistir profile no PB:', createErr)
         }
@@ -141,6 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       role,
       team_id: teamId,
       profileId,
+      must_change_password: mustChangePassword,
       created,
     }
   }
@@ -246,6 +254,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: 'gabsilvio@gmail.com',
             name: 'Gabriel Silvio',
             role: 'master',
+            must_change_password: false,
             created: new Date().toISOString(),
           }
           setUser(demoUser)
@@ -255,7 +264,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         return {
           success: false,
-          error: 'E-mail ou senha inválidos. Por favor, tente novamente.',
+          error: 'E-mail ou senha incorretos.',
         }
       }
 
@@ -299,6 +308,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email,
           name,
           role: email.toLowerCase() === 'gabsilvio@gmail.com' ? 'master' : 'indicador',
+          must_change_password: false,
           created: new Date().toISOString(),
         }
         setUser(localUser)
@@ -353,6 +363,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  // Recarrega o perfil atualizado do backend
+  const refreshProfile = async (): Promise<UserProfile | null> => {
+    if (!pb.authStore.isValid || !pb.authStore.record) {
+      return user
+    }
+    const rec = pb.authStore.record
+    const email = rec.email || ''
+    const name = (rec.name as string) || (rec.email ? rec.email.split('@')[0] : 'Usuário')
+    const fullUser = await fetchUserProfile(rec.id, email, name, rec.created)
+    setUser(fullUser)
+    localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(fullUser))
+    return fullUser
+  }
+
+  // Troca de senha obrigatória no primeiro acesso (ou voluntária)
+  const changePassword = async (
+    newPassword: string,
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!user) {
+        return { success: false, error: 'Usuário não autenticado.' }
+      }
+
+      // 1. Atualiza senha do usuário no PocketBase se houver sessão ativa
+      if (pb.authStore.isValid && pb.authStore.record) {
+        const userId = pb.authStore.record.id
+        await pb.collection('users').update(userId, {
+          password: newPassword,
+          passwordConfirm: newPassword,
+        })
+
+        // 2. Atualiza must_change_password = false no profile correspondente
+        if (user.profileId) {
+          await pb.collection('profiles').update(user.profileId, {
+            must_change_password: false,
+          })
+        } else {
+          try {
+            const profile = await pb.collection('profiles').getFirstListItem(`user_id="${userId}"`)
+            if (profile) {
+              await pb.collection('profiles').update(profile.id, {
+                must_change_password: false,
+              })
+            }
+          } catch (pErr) {
+            console.warn(
+              'Não foi possível localizar profile para atualizar must_change_password:',
+              pErr,
+            )
+          }
+        }
+      }
+
+      // 3. Atualiza estado em memória e localStorage
+      const updatedUser: UserProfile = {
+        ...user,
+        must_change_password: false,
+      }
+      setUser(updatedUser)
+      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(updatedUser))
+
+      return { success: true }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível salvar sua nova senha. Verifique os dados e tente novamente.'
+      return { success: false, error: msg }
+    }
+  }
+
   const value = useMemo(
     () => ({
       user,
@@ -364,6 +445,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout,
       sendPasswordResetEmail,
       resetPassword,
+      changePassword,
+      refreshProfile,
     }),
     [user, isLoading, supabaseStatus],
   )

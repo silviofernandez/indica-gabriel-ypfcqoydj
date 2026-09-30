@@ -16,9 +16,13 @@ export default function Auth() {
   const { user, login, signup } = useAuth()
   const navigate = useNavigate()
 
-  // Se já autenticado, vai para a rota adequada de acordo com o papel
+  // Se já autenticado, vai para a rota adequada de acordo com o papel ou troca de senha
   useEffect(() => {
     if (user) {
+      if (user.must_change_password) {
+        navigate('/trocar-senha', { replace: true })
+        return
+      }
       const destination = user.role === 'indicador' ? '/indicador' : '/admin'
       navigate(destination, { replace: true })
     }
@@ -368,13 +372,9 @@ export default function Auth() {
               <div className="text-center pt-3 border-t border-[#e5e0d8] mt-4">
                 <p className="text-xs text-gray-600">
                   Já possui uma conta?{' '}
-                  <button
-                    type="button"
-                    onClick={() => handleTabChange('login')}
-                    className="font-bold text-[#1a5d8f] hover:underline"
-                  >
+                  <Link to="/login" className="font-bold text-[#1a5d8f] hover:underline">
                     Entrar agora
-                  </button>
+                  </Link>
                 </p>
               </div>
             </form>
