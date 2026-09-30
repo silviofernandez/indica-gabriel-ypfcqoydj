@@ -138,7 +138,7 @@ export default function IndicadorRelatorio() {
                 size="sm"
                 onClick={() => {
                   setErrorMessage(null)
-                  void handleGenerate(format)
+                  void handleDownload('pdf')
                 }}
                 className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
               >
