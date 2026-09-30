@@ -85,6 +85,7 @@ export default function AdminConfiguracoes() {
   // Estado das configurações de bônus
   const [settings, setSettings] = useState<BonusSettingItem[]>([])
   const [loadingSettings, setLoadingSettings] = useState(true)
+  const [loadSettingsError, setLoadSettingsError] = useState<string | null>(null)
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const [settingValues, setSettingValues] = useState<Record<string, string>>({
     rental_fixed_amount: '200',
@@ -100,6 +101,7 @@ export default function AdminConfiguracoes() {
   const [members, setMembers] = useState<TeamMemberItem[]>([])
   const [eligibleUsers, setEligibleUsers] = useState<EligibleUserItem[]>([])
   const [loadingTeams, setLoadingTeams] = useState(true)
+  const [loadTeamsError, setLoadTeamsError] = useState<string | null>(null)
   const [selectedTeamId, setSelectedTeamId] = useState<string>('all')
   const [teamSearch, setTeamSearch] = useState('')
 
@@ -142,6 +144,7 @@ export default function AdminConfiguracoes() {
   // 1. Carregar Configurações de Bônus
   const loadBonusSettings = useCallback(async () => {
     setLoadingSettings(true)
+    setLoadSettingsError(null)
     try {
       const records = await listBonusSettings()
       setSettings(records)
@@ -160,6 +163,7 @@ export default function AdminConfiguracoes() {
       setSettingValues(valuesMap)
     } catch (err) {
       console.warn('Erro ao carregar configurações de bônus:', err)
+      setLoadSettingsError('Não foi possível carregar os parâmetros de bonificação.')
     } finally {
       setLoadingSettings(false)
     }
@@ -168,6 +172,7 @@ export default function AdminConfiguracoes() {
   // 2. Carregar Equipes, Membros e Usuários
   const loadTeamsAndMembers = useCallback(async () => {
     setLoadingTeams(true)
+    setLoadTeamsError(null)
     try {
       const [teamsData, membersData, usersData] = await Promise.all([
         listAllTeams(),
@@ -179,6 +184,7 @@ export default function AdminConfiguracoes() {
       setEligibleUsers(usersData)
     } catch (err) {
       console.warn('Erro ao carregar dados das equipes:', err)
+      setLoadTeamsError('Não foi possível carregar as equipes e membros cadastrados.')
     } finally {
       setLoadingTeams(false)
     }
@@ -542,6 +548,29 @@ export default function AdminConfiguracoes() {
       {/* ======================================================== */}
       {activeSection === 'bonus' && (
         <div className="space-y-6">
+          {loadSettingsError && (
+            <Alert
+              variant="destructive"
+              className="bg-red-50 border-red-200 text-red-900 rounded-xl p-4 flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                <div>
+                  <h4 className="text-sm font-bold text-red-900">Falha ao buscar parâmetros</h4>
+                  <p className="text-xs text-red-700">{loadSettingsError}</p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void loadBonusSettings()}
+                className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
+              >
+                Tentar novamente
+              </Button>
+            </Alert>
+          )}
           <Card className="border-[#e5e0d8] shadow-xs bg-white">
             <CardHeader className="border-b border-[#e5e0d8] pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -861,6 +890,29 @@ export default function AdminConfiguracoes() {
       {/* ======================================================== */}
       {activeSection === 'teams' && (
         <div className="space-y-6">
+          {loadTeamsError && (
+            <Alert
+              variant="destructive"
+              className="bg-red-50 border-red-200 text-red-900 rounded-xl p-4 flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                <div>
+                  <h4 className="text-sm font-bold text-red-900">Falha ao buscar equipes</h4>
+                  <p className="text-xs text-red-700">{loadTeamsError}</p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void loadTeamsAndMembers()}
+                className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
+              >
+                Tentar novamente
+              </Button>
+            </Alert>
+          )}
           {/* Card Superior de Ações e Filtros de Equipes */}
           <Card className="border-[#e5e0d8] shadow-xs bg-white">
             <CardHeader className="pb-4 border-b border-[#e5e0d8]">

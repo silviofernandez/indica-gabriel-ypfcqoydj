@@ -19,8 +19,9 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Alert } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -28,8 +29,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import {
+} from '@/components/ui/dialog'import {
   Select,
   SelectContent,
   SelectItem,
@@ -62,6 +62,7 @@ export default function AdminDashboard() {
 
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [referrals, setReferrals] = useState<ReferralRecord[]>([])
   const [teams, setTeams] = useState<TeamRecord[]>([])
   const [managers, setManagers] = useState<TeamManagerUser[]>([])
@@ -95,6 +96,7 @@ export default function AdminDashboard() {
     }
 
     try {
+      setLoadError(null)
       const [refRes, teamsRes, managersRes] = await Promise.all([
         listAllReferrals({ perPage: 500 }),
         listTeams(),
@@ -106,6 +108,7 @@ export default function AdminDashboard() {
       setManagers(managersRes)
     } catch (err) {
       console.warn('Erro ao carregar dados do painel admin:', err)
+      setLoadError('Não foi possível carregar os dados operacionais do painel.')
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -275,6 +278,31 @@ export default function AdminDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Alerta de erro geral com ação de retry */}
+      {loadError && (
+        <Alert
+          variant="destructive"
+          className="bg-red-50 border-red-200 text-red-900 rounded-xl p-4 flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
+            <div>
+              <h4 className="text-sm font-bold text-red-900">Falha na sincronização dos dados</h4>
+              <p className="text-xs text-red-700">{loadError}</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void loadData(true)}
+            className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
+          >
+            Tentar novamente
+          </Button>
+        </Alert>
+      )}
 
       {/* 2. CARDS TOTALIZADORES DO DIA */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

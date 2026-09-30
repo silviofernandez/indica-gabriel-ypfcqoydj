@@ -211,11 +211,30 @@ export default function Cadastro() {
             /* Formulário de Cadastro */
             <form onSubmit={handleSubmit} className="space-y-6">
               {errorMessage && (
-                <Alert className="bg-red-50 border-red-200 text-red-800 rounded-xl">
-                  <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
-                  <AlertDescription className="text-sm font-medium">
-                    {errorMessage}
-                  </AlertDescription>
+                <Alert className="bg-red-50 border-red-200 text-red-800 rounded-xl flex items-start justify-between gap-3 p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-red-900">
+                        Não foi possível concluir o envio
+                      </h4>
+                      <AlertDescription className="text-xs sm:text-sm text-red-700 mt-0.5 leading-relaxed">
+                        {errorMessage}
+                      </AlertDescription>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      setErrorMessage(null)
+                      void handleSubmit(e)
+                    }}
+                    className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
+                  >
+                    Tentar novamente
+                  </Button>
                 </Alert>
               )}
 

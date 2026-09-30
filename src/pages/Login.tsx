@@ -100,9 +100,28 @@ export default function Login() {
         <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/20">
           {/* Alerta de erro amigável sem jargão técnico */}
           {errorMessage && (
-            <Alert className="mb-6 bg-red-50 border-red-200 text-red-800">
-              <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
-              <AlertDescription className="text-sm font-medium">{errorMessage}</AlertDescription>
+            <Alert className="mb-6 bg-red-50 border-red-200 text-red-800 rounded-xl p-4 flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-bold text-red-900">Falha ao entrar</h4>
+                  <AlertDescription className="text-xs sm:text-sm text-red-700 mt-0.5 leading-relaxed">
+                    {errorMessage}
+                  </AlertDescription>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  setErrorMessage(null)
+                  void handleSubmit(e)
+                }}
+                className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
+              >
+                Tentar novamente
+              </Button>
             </Alert>
           )}
 

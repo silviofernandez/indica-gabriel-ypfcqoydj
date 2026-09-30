@@ -183,24 +183,45 @@ export default function AdminIndicacaoDetalhe() {
 
   if (isLoading) {
     return (
-      <div className="py-24 text-center space-y-3">
+      <div className="py-24 text-center space-y-4 px-4">
         <div className="w-10 h-10 border-3 border-[#1a5d8f] border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-sm text-gray-500">Carregando ficha da indicação...</p>
+        <p className="text-sm text-gray-500 font-medium">Carregando ficha da indicação...</p>
+        <div className="max-w-xl mx-auto space-y-3 pt-3">
+          <div className="h-28 bg-gray-100 rounded-2xl animate-pulse" />
+          <div className="h-44 bg-gray-100 rounded-2xl animate-pulse" />
+        </div>
       </div>
     )
   }
 
   if (!referral) {
     return (
-      <div className="py-20 text-center max-w-md mx-auto space-y-4">
-        <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
+      <div className="py-20 text-center max-w-md mx-auto space-y-4 px-4">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+          <AlertTriangle className="w-7 h-7" />
+        </div>
         <h3 className="text-lg font-bold text-[#0f2a43]">Indicação não encontrada</h3>
-        <p className="text-sm text-gray-500">
-          O registro solicitado não existe ou você não possui permissão para acessá-lo.
+        <p className="text-xs text-gray-600 leading-relaxed">
+          O registro solicitado não existe, pode ter sido removido ou você não possui permissão para
+          acessá-lo.
         </p>
-        <Button asChild className="bg-[#1a5d8f] hover:bg-[#144a72] text-white">
-          <Link to="/admin">Voltar ao Painel</Link>
-        </Button>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void loadData(true)}
+            className="border-gray-300 text-xs h-9 rounded-xl"
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+            Tentar novamente
+          </Button>
+          <Button
+            asChild
+            className="bg-[#1a5d8f] hover:bg-[#144a72] text-white text-xs h-9 rounded-xl"
+          >
+            <Link to="/admin">Voltar ao Painel</Link>
+          </Button>
+        </div>
       </div>
     )
   }

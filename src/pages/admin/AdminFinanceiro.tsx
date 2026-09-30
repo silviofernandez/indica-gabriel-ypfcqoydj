@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Alert } from '@/components/ui/alert'
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ export default function AdminFinanceiro() {
   const [bonuses, setBonuses] = useState<BonusRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'pending' | 'paid' | 'all'>('pending')
 
@@ -67,10 +69,12 @@ export default function AdminFinanceiro() {
     }
 
     try {
+      setLoadError(null)
       const records = await listAllBonuses()
       setBonuses(records)
     } catch (err) {
       console.warn('Erro ao carregar bônus no painel financeiro:', err)
+      setLoadError('Não foi possível carregar os registros financeiros e bônus.')
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -405,6 +409,31 @@ export default function AdminFinanceiro() {
             A geração de relatórios de pagamento do lote do dia 10 é restrita ao perfil Master.
           </span>
         </div>
+      )}
+
+      {/* Alerta de erro com botão de retentativa */}
+      {loadError && (
+        <Alert
+          variant="destructive"
+          className="bg-red-50 border-red-200 text-red-900 rounded-xl p-4 flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+            <div>
+              <h4 className="text-sm font-bold text-red-900">Falha ao buscar dados financeiros</h4>
+              <p className="text-xs text-red-700">{loadError}</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void loadData(true)}
+            className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
+          >
+            Tentar novamente
+          </Button>
+        </Alert>
       )}
 
       {/* 2. CARDS DE INDICADORES / TOTAIS GLOBAIS */}

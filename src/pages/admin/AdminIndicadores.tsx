@@ -48,6 +48,7 @@ export default function AdminIndicadores() {
   const [indicators, setIndicators] = useState<IndicatorRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending')
 
@@ -67,10 +68,12 @@ export default function AdminIndicadores() {
 
   const fetchIndicators = useCallback(async () => {
     try {
+      setLoadError(null)
       const data = await listIndicators()
       setIndicators(data)
     } catch (err) {
       console.error('Erro ao buscar indicadores:', err)
+      setLoadError('Não foi possível carregar a lista de indicadores.')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -244,6 +247,31 @@ export default function AdminIndicadores() {
           </Button>
         </div>
       </div>
+
+      {/* Alerta de erro com botão de retentativa */}
+      {loadError && (
+        <Alert
+          variant="destructive"
+          className="bg-red-50 border-red-200 text-red-900 rounded-xl p-4 flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+            <div>
+              <h4 className="text-sm font-bold text-red-900">Falha ao buscar indicadores</h4>
+              <p className="text-xs text-red-700">{loadError}</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
+          >
+            Tentar novamente
+          </Button>
+        </Alert>
+      )}
 
       {/* Cards de Métricas / Abas */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

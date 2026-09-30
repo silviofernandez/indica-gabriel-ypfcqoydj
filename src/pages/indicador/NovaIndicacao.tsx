@@ -480,48 +480,59 @@ export default function NovaIndicacao() {
                 </p>
               </div>
 
-              {/* Botão de Microfone Gigante em Destaque */}
-              <div className="py-2 flex flex-col items-center justify-center">
+              {/* Botão de Microfone Gigante em Destaque Mobile-First (Dominante no celular) */}
+              <div className="py-4 sm:py-6 flex flex-col items-center justify-center">
                 {!isRecording && !isTranscribing && (
-                  <button
-                    type="button"
-                    onClick={startRecording}
-                    className="group relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-[#1a5d8f] to-[#257dbf] text-white flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-hidden focus:ring-4 focus:ring-[#1a5d8f]/30"
-                    aria-label="Iniciar gravação de áudio"
-                  >
-                    <Mic className="w-10 h-10 sm:w-11 sm:h-11 transition-transform group-hover:scale-110" />
-                    <span className="text-[11px] font-bold mt-1 tracking-wide uppercase">
-                      Gravar
-                    </span>
-                    {/* Anel de pulso sutil ao passar o mouse */}
-                    <span className="absolute inset-0 rounded-full border-2 border-white/40 group-hover:animate-ping opacity-25" />
-                  </button>
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <button
+                      type="button"
+                      onClick={startRecording}
+                      className="group relative w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-tr from-[#0f2a43] via-[#1a5d8f] to-[#2b88c9] text-white flex flex-col items-center justify-center shadow-2xl hover:shadow-[#1a5d8f]/40 hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-hidden focus:ring-4 focus:ring-[#1a5d8f]/40 touch-manipulation cursor-pointer border-4 border-white ring-4 ring-[#1a5d8f]/20"
+                      aria-label="Iniciar gravação de áudio por voz"
+                    >
+                      <span className="p-3 rounded-full bg-white/15 backdrop-blur-xs group-hover:scale-110 transition-transform">
+                        <Mic className="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-sm text-white" />
+                      </span>
+                      <span className="text-xs sm:text-sm font-extrabold mt-1.5 tracking-wider uppercase drop-shadow-sm">
+                        Toque e Fale
+                      </span>
+                      {/* Anéis visuais de destaque chamativos no celular */}
+                      <span className="absolute -inset-1 rounded-full border-2 border-[#1a5d8f]/30 animate-pulse pointer-events-none" />
+                      <span className="absolute -inset-3 rounded-full border border-[#1a5d8f]/20 pointer-events-none" />
+                    </button>
+                    <p className="text-xs font-semibold text-[#1a5d8f] max-w-xs">
+                      Fale o nome e WhatsApp do indicado que nós preenchemos tudo para você!
+                    </p>
+                  </div>
                 )}
 
                 {isRecording && (
-                  <div className="flex flex-col items-center space-y-3">
+                  <div className="flex flex-col items-center space-y-3.5">
                     <div className="relative">
-                      {/* Animação de pulso vermelho de gravação */}
-                      <span className="absolute -inset-3 rounded-full bg-rose-500/20 animate-ping" />
+                      {/* Animação de pulso vermelho forte de gravação em celular */}
+                      <span className="absolute -inset-4 rounded-full bg-rose-500/25 animate-ping pointer-events-none" />
+                      <span className="absolute -inset-2 rounded-full bg-rose-500/30 animate-pulse pointer-events-none" />
                       <button
                         type="button"
                         onClick={stopRecording}
-                        className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex flex-col items-center justify-center shadow-xl active:scale-95 transition-transform"
+                        className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-tr from-rose-700 to-rose-500 hover:bg-rose-700 text-white flex flex-col items-center justify-center shadow-2xl active:scale-95 transition-transform touch-manipulation cursor-pointer border-4 border-white ring-4 ring-rose-400/40"
                         aria-label="Parar gravação"
                       >
-                        <Square className="w-8 h-8 fill-current" />
-                        <span className="text-[11px] font-bold mt-1 tracking-wide uppercase">
-                          Parar
+                        <span className="p-3 rounded-full bg-white/20 backdrop-blur-xs">
+                          <Square className="w-10 h-10 fill-current" />
+                        </span>
+                        <span className="text-xs sm:text-sm font-extrabold mt-1 tracking-wider uppercase">
+                          Concluir Áudio
                         </span>
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-100 border border-rose-300 text-rose-800 text-sm font-mono font-bold animate-pulse">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
+                    <div className="flex items-center gap-2 px-5 py-2 rounded-full bg-rose-100 border border-rose-300 text-rose-900 text-sm font-mono font-extrabold animate-pulse shadow-xs">
+                      <span className="w-3 h-3 rounded-full bg-rose-600 animate-ping" />
                       Gravando: {formatTimer(recordingSeconds)}
                     </div>
-                    <p className="text-xs text-gray-500">
-                      Toque no botão vermelho quando terminar de falar.
+                    <p className="text-xs font-medium text-gray-600 text-center max-w-xs">
+                      Toque no botão vermelho acima para transcrever com a inteligência artificial.
                     </p>
                   </div>
                 )}
@@ -692,12 +703,25 @@ export default function NovaIndicacao() {
 
             {/* Erro no envio */}
             {submitError && (
-              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                <p className="leading-relaxed">{submitError}</p>
+              <div className="flex items-start justify-between gap-3 p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">{submitError}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    setSubmitError(null)
+                    void handleSubmit(e)
+                  }}
+                  className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-7 px-2"
+                >
+                  Tentar novamente
+                </Button>
               </div>
             )}
-
             {/* Botão de Envio Principal */}
             <div className="pt-2">
               <Button

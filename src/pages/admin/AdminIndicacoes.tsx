@@ -22,6 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Alert } from '@/components/ui/alert'
 import {
   Select,
   SelectContent,
@@ -43,6 +44,7 @@ export default function AdminIndicacoes() {
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [referrals, setReferrals] = useState<ReferralRecord[]>([])
   const [nowMs, setNowMs] = useState<number>(() => Date.now())
 
@@ -93,10 +95,12 @@ export default function AdminIndicacoes() {
     }
 
     try {
+      setLoadError(null)
       const res = await listAllReferrals({ perPage: 500 })
       setReferrals(res.items)
     } catch (err) {
       console.warn('Erro ao carregar indicações:', err)
+      setLoadError('Não foi possível carregar a lista de indicações. Tente atualizar.')
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -273,13 +277,42 @@ export default function AdminIndicacoes() {
         </CardContent>
       </Card>
 
+      {/* Alerta de erro de carregamento */}
+      {loadError && (
+        <Alert
+          variant="destructive"
+          className="bg-red-50 border-red-200 text-red-900 rounded-xl p-4 flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
+            <div>
+              <h4 className="text-sm font-bold text-red-900">Falha ao buscar indicações</h4>
+              <p className="text-xs text-red-700">{loadError}</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void loadData(true)}
+            className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
+          >
+            Tentar novamente
+          </Button>
+        </Alert>
+      )}
+
       {/* 3. LISTA DAS INDICAÇÕES */}
       <Card className="border-[#e5e0d8] shadow-sm bg-white overflow-hidden">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="py-16 text-center space-y-3">
+            <div className="py-16 text-center space-y-4 px-4">
               <div className="w-10 h-10 border-3 border-[#1a5d8f] border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="text-sm text-gray-500">Carregando lista de indicações...</p>
+              <div className="max-w-xl mx-auto space-y-2.5 pt-2">
+                <div className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+                <div className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+              </div>
             </div>
           ) : filteredReferrals.length === 0 ? (
             <div className="py-16 px-4 text-center max-w-md mx-auto space-y-3">

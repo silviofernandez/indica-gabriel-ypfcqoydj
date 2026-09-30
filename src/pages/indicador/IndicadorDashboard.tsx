@@ -241,6 +241,7 @@ export default function IndicadorDashboard() {
 
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [data, setData] = useState<IndicatorSummary>({
     totalReferrals: 0,
     inProgressCount: 0,
@@ -267,10 +268,14 @@ export default function IndicadorDashboard() {
       }
 
       try {
+        setErrorMessage(null)
         const summary = await getIndicatorDashboardData(user?.id)
         setData(summary)
       } catch (err) {
         console.warn('Erro ao carregar dados do indicador:', err)
+        setErrorMessage(
+          'Não conseguimos carregar suas informações no momento. Verifique sua conexão e tente novamente.',
+        )
       } finally {
         setIsLoading(false)
         setIsRefreshing(false)
@@ -613,16 +618,41 @@ export default function IndicadorDashboard() {
         </CardHeader>
 
         <CardContent className="p-0">
-          {/* Estado de Carregamento */}
-          {isLoading && (
-            <div className="py-16 text-center space-y-3">
+          {/* Estado de Erro Amigável */}
+          {errorMessage && (
+            <div className="p-6 text-center max-w-md mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-bold text-[#0f2a43]">
+                Não foi possível carregar suas indicações
+              </h4>
+              <p className="text-xs text-gray-600 leading-relaxed">{errorMessage}</p>
+              <Button
+                type="button"
+                onClick={() => void loadData(true)}
+                className="bg-[#1a5d8f] hover:bg-[#144a72] text-white text-xs h-9 px-4 rounded-xl"
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Tentar novamente
+              </Button>
+            </div>
+          )}
+
+          {/* Estado de Carregamento com Skeleton e Spinner */}
+          {isLoading && !errorMessage && (
+            <div className="py-16 text-center space-y-4 px-4">
               <div className="w-10 h-10 border-3 border-[#1a5d8f] border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="text-sm text-gray-500">Carregando suas indicações...</p>
+              <div className="max-w-2xl mx-auto space-y-3 pt-2">
+                <div className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+                <div className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+              </div>
             </div>
           )}
 
           {/* Estado Vazio Amigável: Sem nenhuma indicação criada ainda */}
-          {!isLoading && data.referrals.length === 0 && (
+          {!isLoading && !errorMessage && data.referrals.length === 0 && (
             <div className="py-16 px-4 text-center max-w-md mx-auto space-y-4">
               <div className="w-16 h-16 rounded-3xl bg-[#faf7f2] border-2 border-[#e5e0d8] flex items-center justify-center mx-auto text-[#1a5d8f] shadow-xs">
                 <Sparkles className="w-8 h-8 text-[#d9995b]" />

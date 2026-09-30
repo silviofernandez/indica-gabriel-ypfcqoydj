@@ -37,6 +37,7 @@ export default function AdminVitacon() {
   const [bonuses, setBonuses] = useState<BonusRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -49,6 +50,7 @@ export default function AdminVitacon() {
     }
 
     try {
+      setLoadError(null)
       const [refRes, bonusList] = await Promise.all([
         listAllReferrals({
           filter: 'property_type = "vitacon"',
@@ -64,6 +66,7 @@ export default function AdminVitacon() {
       setBonuses(bonusList)
     } catch (err) {
       console.warn('Erro ao carregar dados Vitacon SP:', err)
+      setLoadError('Não foi possível carregar as oportunidades Vitacon SP.')
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
@@ -198,6 +201,31 @@ export default function AdminVitacon() {
           </Button>
         </div>
       </div>
+
+      {/* Alerta de erro com botão de retentativa */}
+      {loadError && (
+        <Alert
+          variant="destructive"
+          className="bg-red-50 border-red-200 text-red-900 rounded-xl p-4 flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+            <div>
+              <h4 className="text-sm font-bold text-red-900">Falha ao buscar dados Vitacon</h4>
+              <p className="text-xs text-red-700">{loadError}</p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void loadData(true)}
+            className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
+          >
+            Tentar novamente
+          </Button>
+        </Alert>
+      )}
 
       {/* 2. CARDS DE MÉTRICAS VITACON */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

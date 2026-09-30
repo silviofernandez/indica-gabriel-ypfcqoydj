@@ -119,11 +119,31 @@ export default function IndicadorRelatorio() {
           {errorMessage && (
             <Alert
               variant="destructive"
-              className="rounded-xl border-red-200 bg-red-50 text-red-900"
+              className="rounded-xl border-red-200 bg-red-50 text-red-900 p-4 flex items-start justify-between gap-3"
             >
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertTitle className="font-bold text-xs">Atenção</AlertTitle>
-              <AlertDescription className="text-xs mt-1">{errorMessage}</AlertDescription>
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <AlertTitle className="font-bold text-xs sm:text-sm text-red-900">
+                    Falha ao gerar extrato
+                  </AlertTitle>
+                  <AlertDescription className="text-xs text-red-700 mt-1">
+                    {errorMessage}
+                  </AlertDescription>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setErrorMessage(null)
+                  void handleGenerate(format)
+                }}
+                className="border-red-300 text-red-800 hover:bg-red-100 text-xs shrink-0 rounded-lg h-8"
+              >
+                Tentar novamente
+              </Button>
             </Alert>
           )}
 
