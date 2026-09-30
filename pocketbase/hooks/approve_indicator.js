@@ -150,6 +150,64 @@ routerAdd(
       })
     }
 
+    // Disparo de notificação 'approved_credentials' (best-effort)
+    try {
+      const pbUrl = $os.getenv('PB_INSTANCE_URL') || 'http://127.0.0.1:8090'
+      // 1. E-mail com credenciais de acesso
+      try {
+        $http.send({
+          url: pbUrl + '/backend/v1/send-notification',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            channel: 'email',
+            event_type: 'approved_credentials',
+            recipient: indicatorEmail,
+            user_id: targetUser.id,
+            indicator_id: indicatorRecord.id,
+            payload: {
+              name: indicatorName,
+              login: indicatorEmail,
+              email: indicatorEmail,
+              temp_password: tempPassword,
+            },
+          }),
+          timeout: 5,
+        })
+      } catch (mailErr) {
+        console.log('Aviso ao disparar e-mail approved_credentials:', mailErr)
+      }
+
+      // 2. WhatsApp opcional se houver telefone
+      if (indicatorPhone) {
+        try {
+          $http.send({
+            url: pbUrl + '/backend/v1/send-notification',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              channel: 'whatsapp',
+              event_type: 'approved_credentials',
+              recipient: indicatorPhone,
+              user_id: targetUser.id,
+              indicator_id: indicatorRecord.id,
+              payload: {
+                name: indicatorName,
+                login: indicatorEmail,
+                email: indicatorEmail,
+                temp_password: tempPassword,
+              },
+            }),
+            timeout: 5,
+          })
+        } catch (waErr) {
+          console.log('Aviso ao disparar WhatsApp approved_credentials:', waErr)
+        }
+      }
+    } catch (notifErr) {
+      console.log('Aviso geral na notificação approved_credentials:', notifErr)
+    }
+
     return e.json(200, {
       success: true,
       message: 'Indicador aprovado com sucesso!',

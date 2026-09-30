@@ -295,6 +295,94 @@ routerAdd(
       }
     }
 
+    // 10. Disparo de notificação 'status_changed' ao indicador dono (best-effort)
+    try {
+      const indicatorId = referralRecord.getString('indicator_id')
+      let indicatorEmail = ''
+      let indicatorPhone = ''
+      let indicatorName = ''
+      let indicatorUserId = ''
+
+      if (indicatorId) {
+        try {
+          const indRec = $app.findFirstRecordByData('indicators', 'id', indicatorId)
+          if (indRec) {
+            indicatorEmail = String(indRec.get('email') || '').trim()
+            indicatorPhone = String(indRec.get('phone') || '').trim()
+            indicatorName = String(indRec.get('full_name') || '').trim()
+            indicatorUserId = String(indRec.get('user_id') || '').trim()
+          }
+        } catch (_) {}
+      }
+
+      if (indicatorEmail || indicatorPhone) {
+        const pbUrl = $os.getenv('PB_INSTANCE_URL') || 'http://127.0.0.1:8090'
+        const clientName = String(referralRecord.get('client_name') || 'Indicação').trim()
+
+        // E-mail ao indicador
+        if (indicatorEmail) {
+          try {
+            $http.send({
+              url: pbUrl + '/backend/v1/send-notification',
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                channel: 'email',
+                event_type: 'status_changed',
+                recipient: indicatorEmail,
+                user_id: indicatorUserId,
+                indicator_id: indicatorId,
+                referral_id: referralRecord.id,
+                payload: {
+                  name: indicatorName,
+                  client_name: clientName,
+                  old_status: oldStatus,
+                  new_status: newStatus,
+                  notes: notes,
+                  related_id: referralRecord.id,
+                },
+              }),
+              timeout: 5,
+            })
+          } catch (mErr) {
+            console.log('Aviso ao disparar e-mail status_changed:', mErr)
+          }
+        }
+
+        // WhatsApp ao indicador se configurado / com telefone
+        if (indicatorPhone) {
+          try {
+            $http.send({
+              url: pbUrl + '/backend/v1/send-notification',
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                channel: 'whatsapp',
+                event_type: 'status_changed',
+                recipient: indicatorPhone,
+                user_id: indicatorUserId,
+                indicator_id: indicatorId,
+                referral_id: referralRecord.id,
+                payload: {
+                  name: indicatorName,
+                  client_name: clientName,
+                  old_status: oldStatus,
+                  new_status: newStatus,
+                  notes: notes,
+                  related_id: referralRecord.id,
+                },
+              }),
+              timeout: 5,
+            })
+          } catch (wErr) {
+            console.log('Aviso ao disparar WhatsApp status_changed:', wErr)
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.log('Aviso geral na notificação status_changed:', notifErr)
+    }
+
     return e.json(200, {
       success: true,
       message: 'Status atualizado com sucesso!',

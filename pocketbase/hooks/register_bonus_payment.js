@@ -114,6 +114,95 @@ routerAdd(
       }
     }
 
+    // 7. Disparo de notificação 'bonus_paid' ao indicador (best-effort)
+    try {
+      const indicatorId = bonusRecord.getString('indicator_id')
+      let indicatorEmail = ''
+      let indicatorPhone = ''
+      let indicatorName = ''
+      let indicatorUserId = ''
+
+      if (indicatorId) {
+        try {
+          const indRec = $app.findFirstRecordByData('indicators', 'id', indicatorId)
+          if (indRec) {
+            indicatorEmail = String(indRec.get('email') || '').trim()
+            indicatorPhone = String(indRec.get('phone') || '').trim()
+            indicatorName = String(indRec.get('full_name') || '').trim()
+            indicatorUserId = String(indRec.get('user_id') || '').trim()
+          }
+        } catch (_) {}
+      }
+
+      if (indicatorEmail || indicatorPhone) {
+        const pbUrl = $os.getenv('PB_INSTANCE_URL') || 'http://127.0.0.1:8090'
+        const clientName = referralRecord
+          ? String(referralRecord.get('client_name') || '').trim()
+          : ''
+        const bonusAmount = Number(bonusRecord.get('amount') || 0)
+
+        // E-mail ao indicador
+        if (indicatorEmail) {
+          try {
+            $http.send({
+              url: pbUrl + '/backend/v1/send-notification',
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                channel: 'email',
+                event_type: 'bonus_paid',
+                recipient: indicatorEmail,
+                user_id: indicatorUserId,
+                indicator_id: indicatorId,
+                referral_id: referralId,
+                payload: {
+                  name: indicatorName,
+                  amount: bonusAmount,
+                  client_name: clientName,
+                  pix_key_used: pixKeyUsed,
+                  related_id: bonusRecord.id,
+                },
+              }),
+              timeout: 5,
+            })
+          } catch (mErr) {
+            console.log('Aviso ao disparar e-mail bonus_paid:', mErr)
+          }
+        }
+
+        // WhatsApp ao indicador se configurado / com telefone
+        if (indicatorPhone) {
+          try {
+            $http.send({
+              url: pbUrl + '/backend/v1/send-notification',
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                channel: 'whatsapp',
+                event_type: 'bonus_paid',
+                recipient: indicatorPhone,
+                user_id: indicatorUserId,
+                indicator_id: indicatorId,
+                referral_id: referralId,
+                payload: {
+                  name: indicatorName,
+                  amount: bonusAmount,
+                  client_name: clientName,
+                  pix_key_used: pixKeyUsed,
+                  related_id: bonusRecord.id,
+                },
+              }),
+              timeout: 5,
+            })
+          } catch (wErr) {
+            console.log('Aviso ao disparar WhatsApp bonus_paid:', wErr)
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.log('Aviso geral na notificação bonus_paid:', notifErr)
+    }
+
     return e.json(200, {
       success: true,
       message: 'Pagamento de bônus registrado com sucesso!',

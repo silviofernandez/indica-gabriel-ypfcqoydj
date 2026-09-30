@@ -120,6 +120,60 @@ routerAdd('POST', '/backend/v1/submit-indicator-registration', (e) => {
     newIndicator.set('approved', false)
     $app.save(newIndicator)
 
+    // Disparo de notificação 'registration_received' (best-effort)
+    try {
+      const pbUrl = $os.getenv('PB_INSTANCE_URL') || 'http://127.0.0.1:8090'
+      // 1. E-mail de confirmação de cadastro
+      try {
+        $http.send({
+          url: pbUrl + '/backend/v1/send-notification',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            channel: 'email',
+            event_type: 'registration_received',
+            recipient: email,
+            indicator_id: newIndicator.id,
+            payload: {
+              name: fullName,
+              email: email,
+              phone: phone,
+            },
+          }),
+          timeout: 5,
+        })
+      } catch (mailErr) {
+        console.log('Aviso ao disparar e-mail registration_received:', mailErr)
+      }
+
+      // 2. WhatsApp opcional se houver telefone
+      if (phone) {
+        try {
+          $http.send({
+            url: pbUrl + '/backend/v1/send-notification',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              channel: 'whatsapp',
+              event_type: 'registration_received',
+              recipient: phone,
+              indicator_id: newIndicator.id,
+              payload: {
+                name: fullName,
+                email: email,
+                phone: phone,
+              },
+            }),
+            timeout: 5,
+          })
+        } catch (waErr) {
+          console.log('Aviso ao disparar WhatsApp registration_received:', waErr)
+        }
+      }
+    } catch (notifErr) {
+      console.log('Aviso geral na notificação registration_received:', notifErr)
+    }
+
     return e.json(201, {
       success: true,
       id: newIndicator.id,

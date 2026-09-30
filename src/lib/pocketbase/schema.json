@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T21:02:28.979Z",
+  "generatedAt": "2026-09-30T21:09:30.280Z",
   "collections": [
     {
       "name": "users",
@@ -764,19 +764,19 @@
         {
           "name": "type",
           "type": "text",
-          "required": true,
+          "required": false,
           "system": false
         },
         {
           "name": "title",
           "type": "text",
-          "required": true,
+          "required": false,
           "system": false
         },
         {
           "name": "message",
           "type": "text",
-          "required": true,
+          "required": false,
           "system": false
         },
         {
@@ -798,12 +798,73 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "channel",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["email", "whatsapp"]
+        },
+        {
+          "name": "event_type",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "registration_received",
+            "approved_credentials",
+            "status_changed",
+            "bonus_paid"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["sent", "failed", "skipped"]
+        },
+        {
+          "name": "recipient",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "related_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "indicator_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "indicators"
+        },
+        {
+          "name": "error_message",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "payload_json",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_notif_user ON notifications_log (user_id)",
         "CREATE INDEX idx_notif_referral ON notifications_log (referral_id)",
-        "CREATE INDEX idx_notif_read ON notifications_log (read)"
+        "CREATE INDEX idx_notif_read ON notifications_log (read)",
+        "CREATE INDEX `idx_notif_channel` ON `notifications_log` (channel)",
+        "CREATE INDEX `idx_notif_event_type` ON `notifications_log` (event_type)",
+        "CREATE INDEX `idx_notif_status` ON `notifications_log` (status)",
+        "CREATE INDEX `idx_notif_related` ON `notifications_log` (related_id)"
       ]
     }
   ]
